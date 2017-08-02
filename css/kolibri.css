@@ -1,0 +1,26 @@
+
+.vanhely{
+	background-color: #58b000;
+}
+
+.nincshely{
+	background-color: #ffff80;
+}
+
+.inaktivszoba{
+	background-color: #c0c0c0;
+}
+
+#koliTable td{
+	padding:6px;
+	
+}
+
+#koliTable .activeRoom{
+	border: 2px solid #ff0000; 
+	padding:5px;
+}
+
+#lakolistaTable td{
+	padding: 5px;
+}
