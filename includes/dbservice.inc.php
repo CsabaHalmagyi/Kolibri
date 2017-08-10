@@ -32,6 +32,10 @@ function connectToDB(){
 	return $dbh;
 }
 
+/***************************************************************************
+ * USER RELATED METHODS                                                    *
+ ***************************************************************************/
+
 /**
  *
  * Returns all users and groups in array("users"=>[],"groups"=[]) format
@@ -189,20 +193,20 @@ function updateUser($dbh, $userID, $firstName, $surName, $group, $status, $pass)
 							aktiv = :statusz
             			WHERE felhasznalo_id = :userid";
 	}
-		
+
 	$sth = $dbh->prepare($sql);
 	$sth->bindParam(':userid', $userID);
 	$sth->bindParam(':vezeteknev', $surName);
 	$sth->bindParam(':keresztnev', $firstName);
 	$sth->bindParam(':csoport', $group);
 	$sth->bindParam(':statusz', $status);
-		
+
 	if(!empty($pass)){
 		$sth->bindParam(':jelszo', md5($pass));
 	}
-		
+
 	$sth->execute();
-		
+
 	if($sth->rowCount() == 1){
 		$errorCode = 0;
 		$message = 'Felhasználó módosítva!';
@@ -213,7 +217,161 @@ function updateUser($dbh, $userID, $firstName, $surName, $group, $status, $pass)
 		$message = 'A felhasználót nem sikerült módosítani!';
 		return array("errorCode"=>$errorCode,"message"=>$message);
 	}
+}
+
+/***************************************************************************
+ * GROUPS/PERMISSIONS RELATED METHODS                                                    *
+ ***************************************************************************/
+
+/**
+ *
+ * Creates a new group with given permissions
+ * @param unknown_type $dbh
+ * @param unknown_type $groupName
+ * @param unknown_type $permissions
+ * @return multitype:number string
+ */
+function createNewGroup($dbh, $groupName, $permissions){
+
+	$sql = 'SELECT * from kolibri_jogcsoportok WHERE csoportnev = :csoport';
+
+	$sth = $dbh->prepare($sql);
+	$sth->bindParam(':csoport', $groupName);
+	$sth->execute();
+
+	$csoportok = $sth->fetchAll(PDO::FETCH_ASSOC);
+
+	if(count($csoportok) == 0){
+		$sql = 'INSERT INTO kolibri_jogcsoportok(
+				csoportnev,
+            	hallgato_adatmodositas,
+            	hallgato_nev_szoba,
+            	hallgato_telefonszam,
+            	hallgato_cim,
+				hallgato_penzugy,
+				igazolas,
+				bekoltoztetes,
+				lakolista,
+				statisztika,
+				admin) VALUES (:csoport,';
+
+		foreach($permissions as $id=>$val){
+			if($val){
+				$sql.= '"1"';
+			}
+			else{
+				$sql.= '"0"';
+			}
+			if ($id != 'uj_10') $sql.=',';
+		}
+		$sql.=")";
+			
+		$sth = $dbh->prepare($sql);
+		$sth->bindParam(':csoport', $groupName);
+		$sth->execute();
+			
+		$message = "Csoport létrehozva.";
+		return array("errorCode"=>0,"message"=>$message);
+	}
+	else{
+
+		$errorCode = 2;
+		$message = "A csoport már létezik!";
+		return array("errorCode"=>$errorCode,"message"=>$message);
+	}
+}
+
+
+/**
+ *
+ * Deletes a group from the database
+ * @param unknown_type $dbh
+ * @param unknown_type $groupID
+ */
+function deleteGroup($dbh, $groupID){
+
+
+	$sql = 'SELECT * FROM kolibri_felhasznalok WHERE csoport = :groupid';
+	$sth = $dbh->prepare($sql);
+	$sth->bindParam(':groupid', $groupID);
+	$sth->execute();
+
+	$felhasznalok = $sth->fetchAll(PDO::FETCH_ASSOC);
+
+	if(count($felhasznalok) != 0){
+		$errorCode = 4;
+		$message = 'A csoport nem törölhető, mert tagjai vannak!';
+		return array("errorCode"=>$errorCode,"message"=>$message);
+	}
+	else{
+		$sql = 'DELETE FROM kolibri_jogcsoportok WHERE id = :groupid';
+		$sth = $dbh->prepare($sql);
+		$sth->bindParam(':groupid', $groupID);
+		$sth->execute();
+
+		if($sth->rowCount()>0){
+			$errorCode = 0;
+			$message = 'Csoport törölve!';
+			return array("errorCode"=>$errorCode,"message"=>$message);
+		}
+		else{
+			$errorcode = 5;
+			$message = 'Hiba a csoport törlésekor.';
+			return array("errorCode"=>$errorCode,"message"=>$message);
+		}
+	}
+}
+
+
+/**
+ *
+ * Updates selected group with given permissions
+ * @param unknown_type $dbh
+ * @param unknown_type $groupID
+ * @param unknown_type $perm
+ */
+function updateGroup($dbh, $groupID, $perm){
+
+	$jog = array();
+	foreach($perm as $pk=>$pv){
+		if($pv){
+			$jog[]="1";
+		}
+		else{
+			$jog[]="0";
+		}
+	}
+
+
+	$sql = 'UPDATE kolibri_jogcsoportok SET
+            hallgato_adatmodositas = "'.$jog[0].'",
+            hallgato_nev_szoba = "'.$jog[1].'",
+            hallgato_telefonszam = "'.$jog[2].'",
+            hallgato_cim = "'.$jog[3].'",
+			hallgato_penzugy = "'.$jog[4].'",
+			igazolas = "'.$jog[5].'",
+			bekoltoztetes = "'.$jog[6].'",
+			lakolista = "'.$jog[7].'",
+			statisztika = "'.$jog[8].'",
+			admin = "'.$jog[9].'" WHERE id = :groupid';
+
+	$sth = $dbh->prepare($sql);
+	$sth->bindParam(':groupid', $groupID);
+	$sth->execute();
+
+	if($sth->rowCount()>0){
+		$errorCode = 0;
+		$message = 'Csoport módosítva!';
+		return array("errorCode"=>$errorCode,"message"=>$message);
+
+	}
+	else{
+		$errorcode = 6;
+		$message = 'Hiba a csoport módosításakor.';
+		return array("errorCode"=>$errorCode,"message"=>$message);
+	}
 
 }
+
 
 ?>
