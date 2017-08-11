@@ -220,7 +220,7 @@ function updateUser($dbh, $userID, $firstName, $surName, $group, $status, $pass)
 }
 
 /***************************************************************************
- * GROUPS/PERMISSIONS RELATED METHODS                                                    *
+ * USER GROUPS/PERMISSIONS RELATED METHODS                                 *
  ***************************************************************************/
 
 /**
@@ -372,6 +372,194 @@ function updateGroup($dbh, $groupID, $perm){
 	}
 
 }
+
+
+
+/***************************************************************************
+ * DORM/FINANCE RELATED FUNCTIONS                                          *
+ ***************************************************************************/
+
+/**
+ *
+ * Returns the list of dorms and financialCodes
+ * @param unknown_type $dbh
+ */
+function getDormsWithFinancialCodes($dbh){
+
+	$sql = 'SELECT * FROM kolibri_kollegiumok';
+
+	$sth = $dbh->prepare($sql);
+	$sth->execute();
+	$kollegiumok = $sth->fetchAll(PDO::FETCH_ASSOC);
+
+	$sql = 'SELECT pk_id, kollegium_id, kollegiumi_dij FROM kolibri_penzugyi_kodok';
+	$sth = $dbh->prepare($sql);
+	$sth->execute();
+	$penzugyikodok = $sth->fetchAll(PDO::FETCH_ASSOC);
+
+	if(count($kollegiumok)>0) {
+		return array("kollegiumok"=>$kollegiumok, "penzugyikodok"=>$penzugyikodok);
+	}
+	else{
+		return array("kollegiumok"=>null, "penzugyikodok"=>null);
+	}
+}
+
+
+/**
+ *
+ * Returns the students of a room (using current semester)
+ * @param unknown_type $dbh
+ */
+function getRoomDetails($dbh, $koliID, $szobaID){
+
+	$sql = 'SELECT kolibri_hallgatok.hallgato_id, kolibri_hallgatok.hallgato_neptun_kod, kolibri_hallgatok.hallgato_neve, kolibri_szoba_reszletek.bekoltozes_datuma
+				FROM kolibri_szoba_reszletek
+				INNER JOIN kolibri_hallgatok
+				ON kolibri_szoba_reszletek.hallgato_id = kolibri_hallgatok.hallgato_id
+				WHERE kolibri_szoba_reszletek.tanev_id = :tanevid
+				AND kolibri_szoba_reszletek.kollegium_id = :kollid
+				AND kolibri_szoba_reszletek.szoba_id = :szobaid
+				and kolibri_szoba_reszletek.kikoltozes_datuma = "0000-00-00 00:00:00"';
+
+	$sth = $dbh->prepare($sql);
+	$sth->bindParam(':kollid', $koliID);
+	$sth->bindParam(':szobaid', $szobaID);
+	$sth->bindParam(':tanevid', $_SESSION['beallitasok']['aktualis_tanev_id']);
+	$sth->execute();
+
+	$szobalakok = $sth->fetchAll(PDO::FETCH_ASSOC);
+
+	return $szobalakok;
+
+}
+
+
+/***************************************************************************
+ * CARD RELATED FUNCTIONS                                                  *
+ ***************************************************************************/
+
+/**
+ *
+ * Checks if a given card is currently available
+ * @param unknown_type $dbh
+ * @param unknown_type $card
+ */
+function isCardAvailable($dbh, $card){
+
+	$sql = 'SELECT * FROM kolibri_belepokartyak
+					WHERE kartya_szam = :kartya
+					AND leadas_datuma = "0000-00-00 00:00:00"';
+
+	$sth = $dbh->prepare($sql);
+	$sth->bindParam(':kartya', $card);
+	$sth->execute();
+
+	$hasznalo = $sth->fetchAll(PDO::FETCH_ASSOC);
+
+	if(count($hasznalo)>0){
+		return false;
+	}
+
+	return true;
+}
+
+/**
+ * 
+ * Assigns a card to a student
+ * @param unknown_type $dbh
+ * @param unknown_type $student
+ * @param unknown_type $card
+ */
+function assignCardToStudent($dbh, $student, $card){
+
+	if(isCardAvailable($dbh, $card)){
+
+		$sql = 'INSERT INTO kolibri_belepokartyak (tanev_id, hallgato_id, kartya_szam, felvetel_datuma)
+						VALUES(:tanev, :hallgato, :kartya, :felvetel)';
+			
+		$sth = $dbh->prepare($sql);
+		$sth->bindParam(':tanev', $_SESSION['beallitasok']['aktualis_tanev_id']);
+		$sth->bindParam(':hallgato', $student);
+		$sth->bindParam(':kartya', $card);
+		$sth->bindParam(':felvetel', date('Y-m-d H:i:s'));
+		$sth->execute();
+
+		$errorcode = 0;
+		$message = 'Kártya hallgatóhoz rendelve.';
+		return array("errorCode"=>$errorCode,"message"=>$message);
+
+	}
+	else{
+		$errorcode = 67;
+		$message = 'A kártya jelenleg használatban van.';
+		return array("errorCode"=>$errorCode,"message"=>$message);
+	}
+
+}
+
+
+/**
+ * 
+ * Revokes a card from a student
+ * @param unknown_type $dbh
+ * @param unknown_type $cardEntryID
+ */
+function revokeCardFromStudent($dbh, $cardEntryID){
+
+	$sql = 'UPDATE kolibri_belepokartyak SET leadas_datuma = :leadas
+					WHERE kartya_bejegyzes_id = :bejegyzes';
+
+	$sth = $dbh->prepare($sql);
+	$sth->bindParam(':leadas', date('Y-m-d H:i:s'));
+	$sth->bindParam(':bejegyzes', $cardEntryID);
+	$sth->execute();
+		
+	$errorcode = 0;
+	$message = 'Kártya hallgatótól visszavonva.';
+	return array("errorCode"=>$errorCode,"message"=>$message);
+}
+
+
+
+
+
+
+/***************************************************************************
+ * ADDITIONAL HELPER FUNCTIONS                                             *
+ ***************************************************************************/
+
+
+/**
+ *
+ * Returns max 10 students without room (using current semester)
+ * @param unknown_type $dbh
+ * @param unknown_type $koliID
+ */
+function getStudentsWithoutRoom($dbh, $koliID){
+
+	$sql = 'SELECT kolibri_hallgatok.hallgato_id, kolibri_hallgatok.hallgato_neptun_kod,
+					kolibri_hallgatok.hallgato_neve
+					FROM kolibri_felvettek
+					INNER JOIN kolibri_hallgatok
+					ON kolibri_felvettek.hallgato_id = kolibri_hallgatok.hallgato_id
+					WHERE kolibri_felvettek.tanev_id = :tanevid
+					AND kolibri_felvettek.kollegium_id = :kollid
+					AND kolibri_felvettek.szobaba_beosztva = "0"
+					ORDER BY  kolibri_hallgatok.hallgato_neve
+					LIMIT 10';
+
+	$sth = $dbh->prepare($sql);
+	$sth->bindParam(':tanevid', $_SESSION['beallitasok']['aktualis_tanev_id']);
+	$sth->bindParam(':kollid', $koliID);
+
+	$sth->execute();
+
+	$szobatlan_hallgatok = $sth->fetchAll(PDO::FETCH_ASSOC);
+
+	return $szobatlan_hallgatok;
+}
+
 
 
 ?>
