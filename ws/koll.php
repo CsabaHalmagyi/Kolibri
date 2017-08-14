@@ -78,7 +78,7 @@ if(count($_POST)>0){
 			printResponse(2,"Adatbázis kapcsolat nem jött létre", null, null, null);
 		}
 
-		$szobalakok = getRoomDetails($dbh, $koliID, szobaID);
+		$szobalakok = getRoomDetails($dbh, $koliID, $szobaID);
 
 		$szobatlan_hallgatok = getStudentsWithoutRoom($dbh, $koliID);
 

@@ -428,10 +428,7 @@ function getRoomDetails($dbh, $koliID, $szobaID){
 	$sth->bindParam(':tanevid', $_SESSION['beallitasok']['aktualis_tanev_id']);
 	$sth->execute();
 
-	$szobalakok = $sth->fetchAll(PDO::FETCH_ASSOC);
-
-	return $szobalakok;
-
+	return $sth->fetchAll(PDO::FETCH_ASSOC);
 }
 
 
@@ -562,6 +559,41 @@ function getStudentByNeptun($dbh, $neptun){
 }
 
 
+function getStudentByID($dbh, $hallgato){
+
+	$sql = 'SELECT * FROM kolibri_hallgatok WHERE hallgato_id = :hallgato';
+	$sth = $dbh->prepare($sql);
+	$sth->bindParam(':hallgato', $hallgato);
+	$sth->execute();
+
+	return $sth->fetch(PDO::FETCH_ASSOC);
+}
+
+
+function updateStudentByID($dbh, $nev, $email, $telefon, $lakcim,
+$allampolgarsag, $kepzesiforma, $penzugyikod, $hallgID){
+
+	$sql = "UPDATE kolibri_hallgatok SET
+							hallgato_neve = :nev,
+							hallgato_email = :email,
+							hallgato_telefon = :telefon,
+							hallgato_lakcim = :lakcim,
+							hallgato_allampolgarsag = :allampolgarsag,
+							hallgato_kepzesi_forma = :kepzesiforma,
+							hallgato_penzugyi_kod = :penzugyikod
+            			WHERE hallgato_id = :hid";
+
+	$sth = $dbh->prepare($sql);
+	$sth->bindParam(':nev', $nev);
+	$sth->bindParam(':email', $email);
+	$sth->bindParam(':telefon', $telefon);
+	$sth->bindParam(':lakcim', $lakcim);
+	$sth->bindParam(':allampolgarsag', $allampolgarsag);
+	$sth->bindParam(':kepzesiforma', $kepzesiforma);
+	$sth->bindParam(':penzugyikod', $penzugyikod);
+	$sth->bindParam(':hid', $hallgID);
+	$sth->execute();
+}
 
 /**
  *
@@ -588,6 +620,127 @@ function getEnrollDetails($dbh, $studentID){
 	return $felvett;
 }
 
+
+function searchForStudentOnEnrollmentListByName($dbh, $name){
+
+	$sql = 'SELECT kolibri_hallgatok.hallgato_id, kolibri_hallgatok.hallgato_neptun_kod,
+					kolibri_hallgatok.hallgato_neve
+					FROM kolibri_felvettek
+					INNER JOIN kolibri_hallgatok
+					ON kolibri_felvettek.hallgato_id = kolibri_hallgatok.hallgato_id
+					WHERE kolibri_hallgatok.hallgato_neve LIKE :nev
+					ORDER BY  kolibri_hallgatok.hallgato_neve
+					LIMIT 15';
+
+	$sth = $dbh->prepare($sql);
+	$keyword = "%$name%";
+	$sth->bindParam(':nev', $keyword);
+	$sth->execute();
+	return $sth->fetchAll(PDO::FETCH_ASSOC);
+
+}
+
+
+
+
+function searchForStudentOnEnrollmentListByNeptun($dbh, $neptun){
+
+	$sql = 'SELECT kolibri_hallgatok.hallgato_id, kolibri_hallgatok.hallgato_neptun_kod,
+					kolibri_hallgatok.hallgato_neve
+					FROM kolibri_felvettek
+					INNER JOIN kolibri_hallgatok
+					ON kolibri_felvettek.hallgato_id = kolibri_hallgatok.hallgato_id
+					WHERE kolibri_hallgatok.hallgato_neptun_kod LIKE :neptun
+					ORDER BY  kolibri_hallgatok.hallgato_neve
+					LIMIT 15';
+
+	$sth = $dbh->prepare($sql);
+	$keyword = "%$neptun%";
+	$sth->bindParam(':neptun', $keyword);
+	$sth->execute();
+	return $sth->fetchAll(PDO::FETCH_ASSOC);
+}
+
+
+function searchForStudentOnEnrollmentListByCard($dbh, $kartya){
+
+	$sql = 'SELECT kolibri_hallgatok.hallgato_id, kolibri_hallgatok.hallgato_neptun_kod,
+					kolibri_hallgatok.hallgato_neve, kolibri_belepokartyak.kartya_szam
+					FROM kolibri_felvettek
+					INNER JOIN kolibri_hallgatok
+					ON kolibri_felvettek.hallgato_id = kolibri_hallgatok.hallgato_id
+					INNER JOIN kolibri_belepokartyak
+					ON kolibri_belepokartyak.hallgato_id = kolibri_felvettek.hallgato_id		
+					WHERE kolibri_belepokartyak.kartya_szam LIKE :kartya
+					AND kolibri_belepokartyak.leadas_datuma = "0000-00-00 00:00:00"	
+					ORDER BY  kolibri_belepokartyak.kartya_szam
+					LIMIT 15';
+
+	$sth = $dbh->prepare($sql);
+	$keyword = "$kartya%";
+	$sth->bindParam(':kartya', $keyword);
+	$sth->execute();
+	return $sth->fetchAll(PDO::FETCH_ASSOC);
+}
+
+
+
+function searchForStudentByName($dbh, $name){
+
+	$sql = 'SELECT kolibri_hallgatok.hallgato_id, kolibri_hallgatok.hallgato_neptun_kod,
+					kolibri_hallgatok.hallgato_neve
+					FROM kolibri_hallgatok
+					WHERE kolibri_hallgatok.hallgato_neve LIKE :nev
+					ORDER BY  kolibri_hallgatok.hallgato_neve
+					LIMIT 15';
+
+	$sth = $dbh->prepare($sql);
+	$keyword = "%$name%";
+	$sth->bindParam(':nev', $keyword);
+	$sth->execute();
+	return $sth->fetchAll(PDO::FETCH_ASSOC);
+}
+
+
+function searchForStudentByNeptun($dbh, $neptun){
+
+	$sql = 'SELECT kolibri_hallgatok.hallgato_id, kolibri_hallgatok.hallgato_neptun_kod,
+					kolibri_hallgatok.hallgato_neve
+					FROM kolibri_hallgatok
+					WHERE kolibri_hallgatok.hallgato_neptun_kod LIKE :neptun
+					ORDER BY  kolibri_hallgatok.hallgato_neve
+					LIMIT 15';
+
+	$sth = $dbh->prepare($sql);
+	$keyword = "%$neptun%";
+	$sth->bindParam(':neptun', $keyword);
+	$sth->execute();
+	return $sth->fetchAll(PDO::FETCH_ASSOC);
+}
+
+
+
+
+function searchForStudentByCard($dbh, $card){
+
+	$sql = 'SELECT kolibri_hallgatok.hallgato_id, kolibri_hallgatok.hallgato_neptun_kod,
+					kolibri_hallgatok.hallgato_neve, kolibri_belepokartyak.kartya_szam
+					FROM kolibri_hallgatok
+					INNER JOIN kolibri_belepokartyak
+					ON kolibri_belepokartyak.hallgato_id = kolibri_hallgatok.hallgato_id
+					WHERE kolibri_belepokartyak.kartya_szam LIKE :kartya
+					AND kolibri_belepokartyak.leadas_datuma = "0000-00-00 00:00:00"
+					ORDER BY  kolibri_belepokartyak.kartya_szam
+					LIMIT 15';
+		
+	$sth = $dbh->prepare($sql);
+	$keyword = "$card%";
+	$sth->bindParam(':kartya', $keyword);
+	$sth->execute();
+	return $sth->fetchAll(PDO::FETCH_ASSOC);
+}
+
+
 /**
  *
  * Creates a student and returns the hallgato_id or false, if the insert was not successful.
@@ -604,7 +757,7 @@ function getEnrollDetails($dbh, $studentID){
  * @param unknown_type $hallgatoID
  */
 function createNewStudent($dbh, $nk, $nev, $email, $telefon, $lakcim,
-$allampolgarsag, $kepzesiforma, $penzugyikod, $hallgatoID){
+$allampolgarsag, $kepzesiforma, $penzugyikod){
 
 	$sql = "INSERT INTO kolibri_hallgatok (
 							hallgato_neptun_kod,
@@ -689,6 +842,24 @@ function addStudentToEnrollmentList($dbh, $kollID, $hallgID){
 }
 
 
+/**
+ *
+ * Removes a student from the enrollment list (felvettek listája adott kollégiumba aktuális tanévre)
+ * @param unknown_type $dbh
+ * @param unknown_type $hallgID
+ */
+function removeStudentFromEnrollmentList($dbh, $hallgID){
+
+	$sql = 'DELETE FROM kolibri_felvettek
+				WHERE hallgato_id = :hallgato';
+
+	$sth = $dbh->prepare($sql);
+	$sth->bindParam(':hallgato', $hallgID);
+	$sth->execute();
+}
+
+
+
 function getStudentBeKikoltoztetLista($dbh, $name, $kollID){
 
 	$sql = 'SELECT *, kh.hallgato_id as hallg_azon
@@ -738,7 +909,7 @@ function getStudentBeKikoltoztetAdat($dbh, $hallgID, $kollID){
 	$sth->bindParam(':kollid', $kollID);
 	$sth->execute();
 	//file_put_contents("koll.log", $sth->debugDumpParams());
-	return  = $sth->fetch(PDO::FETCH_ASSOC);
+	return $sth->fetch(PDO::FETCH_ASSOC);
 }
 
 
@@ -778,6 +949,70 @@ function getStudentSemesterEntries($dbh, $studentID, $kollID){
 	return $sth2->fetchAll(PDO::FETCH_ASSOC);
 }
 
+function getStudentSemesterEntriesToRoom($dbh, $studentID, $kollID, $roomID){
+
+	$sql = 'SELECT reszletek_id, bekoltozes_datuma FROM kolibri_szoba_reszletek
+						WHERE tanev_id = :tanev
+						AND kollegium_id = :kollegium
+						AND hallgato_id = :hallgato
+						AND szoba_id = :szoba 
+						ORDER BY reszletek_id DESC
+						LIMIT 1';
+
+	$sth2 = $dbh->prepare($sql);
+
+	$sth2->bindParam(':hallgato', $studentID);
+	$sth2->bindParam(':tanev', $_SESSION['beallitasok']['aktualis_tanev_id']);
+	$sth2->bindParam(':kollegium', $kollID);
+	$sth2->bindParam(':szoba', $roomID);
+	$sth2->execute();
+
+	return $sth2->fetch(PDO::FETCH_ASSOC);
+}
+
+
+
+
+function isStudentInRoom($dbh, $kollegium, $szoba, $hallgato){
+	
+		$sql = 'SELECT reszletek_id, bekoltozes_datuma FROM kolibri_szoba_reszletek
+						WHERE tanev_id = :tanev
+						AND kollegium_id = :kollegium
+						AND hallgato_id = :hallgato
+						AND szoba_id = :szoba 
+						ORDER BY reszletek_id DESC';
+
+	$sth2 = $dbh->prepare($sql);
+
+	$sth2->bindParam(':hallgato', $hallgato);
+	$sth2->bindParam(':tanev', $_SESSION['beallitasok']['aktualis_tanev_id']);
+	$sth2->bindParam(':kollegium', $kollegium);
+	$sth2->bindParam(':szoba', $roomID);
+	$sth2->execute();
+	
+	$result = $sth2->fetchAll(PDO::FETCH_ASSOC);
+	
+	if(count($result)>0) return true;
+	return false;
+	
+}
+
+
+
+
+function getRoomDetailsByID($dbh, $entryID){
+
+	$sql = 'SELECT bekoltozes_datuma, kikoltozes_datuma
+				FROM kolibri_szoba_reszletek
+				WHERE reszletek_id = :reszletek';
+
+	$sth = $dbh->prepare($sql);
+	$sth->bindParam(':reszletek', $entryID);
+	$sth->execute();
+
+	return $sth->fetch(PDO::FETCH_ASSOC);
+}
+
 
 /**
  *
@@ -786,13 +1021,13 @@ function getStudentSemesterEntries($dbh, $studentID, $kollID){
  */
 function assignStudentWithLegalRelationshipToRoom($dbh, $studentID, $kollID, $roomID){
 
-	$sql = "INSERT INTO kolibri_szoba_reszletek (
-							hallgato_id,
-							tanev_id,
-							kollegium_id,
-							szoba_id,
-							beosztas_datuma,
-							bekoltozes_datuma)
+	$sql = "INSERT INTO `kolibri_szoba_reszletek` (
+							`hallgato_id`,
+							`tanev_id`,
+							`kollegium_id`,
+							`szoba_id`,
+							`beosztas_datuma`,
+							`bekoltozes_datuma`)
 							VALUES(:hallgato,:tanev,:kollegium, :szoba, :beosztas_datuma,:bekoltozes_datuma)";
 
 	$sth = $dbh->prepare($sql);
@@ -837,6 +1072,36 @@ function assignStudentToRoom($dbh, $studentID, $kollID, $roomID){
 	$sth->execute();
 }
 
+function removeStudentFromRoom($dbh, $studentID, $kollID, $roomID ){
+
+	$sql = "DELETE FROM kolibri_szoba_reszletek
+				WHERE hallgato_id = :hallgato
+				AND tanev_id = :tanev
+				AND kollegium_id = :kollegium
+				AND szoba_id = :szoba";
+
+	$sth = $dbh->prepare($sql);
+
+	$sth->bindParam(':hallgato', $studentID);
+	$sth->bindParam(':tanev', $_SESSION['beallitasok']['aktualis_tanev_id']);
+	$sth->bindParam(':kollegium', $kollID);
+	$sth->bindParam(':szoba', $roomID);
+	$sth->execute();
+
+}
+
+
+function removeStudentWithLegalRelationshipFromRoom($dbh, $reszletek_id){
+
+	$sql = 'UPDATE kolibri_szoba_reszletek SET kikoltozes_datuma = :kikoltozes WHERE reszletek_id = :reszletek';
+	$sth = $dbh->prepare($sql);
+	$sth->bindParam(':kikoltozes', date('Y-m-d H:i:s'));
+	$sth->bindParam(':reszletek', $reszletek_id);
+	$sth->execute();
+}
+
+
+
 /**
  * Hallgató felvettek lista update
  *
@@ -846,7 +1111,7 @@ function updateRoomStatusOnStudentSemesterList($dbh, $studentID, $status){
 	$sqlu = "UPDATE kolibri_felvettek SET szobaba_beosztva = :status WHERE hallgato_id = :hallgato";
 	$sth2 = $dbh->prepare($sqlu);
 	//$beosztva = 1;
-	$sth->bindParam(':status', $status);
+	$sth2->bindParam(':status', $status);
 	$sth2->bindParam(':hallgato', $studentID, PDO::PARAM_INT);
 	$sth2->execute();
 }
@@ -863,6 +1128,41 @@ function updateRoomDefFreeSpace($dbh, $szoba, $ujszabadhely){
 	$sth3->bindParam(':szoba', $szoba, PDO::PARAM_INT);
 	$sth3->execute();
 }
+
+/**
+ * Jogviszony létrehozás szobába beosztott hallgatóhoz
+ *
+ */
+function createLegalRelationshipByID($dbh, $reszletek){
+
+	$sql = 'UPDATE kolibri_szoba_reszletek SET bekoltozes_datuma = :bekoltozes WHERE reszletek_id = :reszletek';
+	$sth = $dbh->prepare($sql);
+	$sth->bindParam(':reszletek', $reszletek);
+	$sth->bindParam(':bekoltozes', date('Y-m-d H:i:s'));
+	$sth->execute();
+}
+
+/**
+ *
+ * Hallgató szoba státusza
+ * 0 = nincs szobába beosztva
+ * 1 = be van osztva szobába
+ * @param unknown_type $dbh
+ * @param unknown_type $hallgato
+ */
+function getStudentRoomStatus($dbh, $hallgato){
+
+	$sql = 'SELECT szobaba_beosztva
+				FROM kolibri_felvettek
+				WHERE hallgato_id = :hallgato';
+
+	$sth = $dbh->prepare($sql);
+	$sth->bindParam(':hallgato', $hallgato);
+	$sth->execute();
+
+	return $sth->fetch(PDO::FETCH_ASSOC);
+}
+
 
 /***************************************************************************
  * ADDITIONAL HELPER FUNCTIONS                                             *

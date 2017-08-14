@@ -42,7 +42,7 @@ if(count($_POST)>0){
 
 			$dbh = connectToDB();
 			if(!$dbh){
-				printResponse(2,"Adatbázis kapcsolat nem jött létre", null, null, null);
+				printResponse(2,"Adatbázis kapcsolat nem jött létre", null, null);
 			}
 
 			$student = getStudentByNeptun($dbh, $_POST['nk']);
@@ -116,7 +116,7 @@ if(count($_POST)>0){
 
 		$dbh = connectToDB();
 		if(!$dbh){
-			printResponse(2,"Adatbázis kapcsolat nem jött létre", null, null, null);
+			printResponse(2,"Adatbázis kapcsolat nem jött létre", null, null);
 		}
 
 		if(isset($_POST['hallgato']) && strlen($_POST['hallgato'])>0){
@@ -138,7 +138,7 @@ if(count($_POST)>0){
 
 		$dbh = connectToDB();
 		if(!$dbh){
-			printResponse(2,"Adatbázis kapcsolat nem jött létre", null, null, null);
+			printResponse(2,"Adatbázis kapcsolat nem jött létre", null, null);
 		}
 
 		if(isset($_POST['hallgato']) && strlen($_POST['hallgato'])>0 && strlen($_POST['kollegium'])>0){
@@ -177,7 +177,7 @@ if(count($_POST)>0){
 
 		$dbh = connectToDB();
 		if(!$dbh){
-			printResponse(2,"Adatbázis kapcsolat nem jött létre", null, null, null);
+			printResponse(2,"Adatbázis kapcsolat nem jött létre", null, null);
 		}
 
 		if(isset($_POST['hallgato']) && strlen($_POST['hallgato'])>0 && strlen($_POST['kollegium'])>0){
@@ -207,7 +207,7 @@ if(count($_POST)>0){
 			}
 
 
-			if($r['kikoltozes_datuma'] != "0000-00-00 00:00:00" || $r['szoba_szam'] ==null){
+			if($r['kikoltozes_datuma'] != "0000-00-00 00:00:00" || $r['szoba_szam'] == null){
 				$tablazat.= '<tr><td>Jogviszony megszűntetése</td><td><button type="button" class="btn btn-primary jogviszony_megszuntetese" id="kikoltoztet_'.$_POST['hallgato'].'">Kiköltöztet</button></td></tr>';
 			}
 			else{
@@ -238,17 +238,21 @@ if(count($_POST)>0){
 			printResponse(1,"Hiányzó id!",null,null);
 		}
 
-
 		$dbh = connectToDB();
 		if(!$dbh){
-			printResponse(2,"Adatbázis kapcsolat nem jött létre", null, null, null);
+			printResponse(2,"Adatbázis kapcsolat nem jött létre", null, null);
+		}
+
+		$doubleEntry = isStudentInRoom($dbh, $kollegium, $szoba, $hallgato);
+
+		if($doubleEntry){
+				
+			printResponse(2,"A hallgató már hozzá van rendelve a szobához.", null, null);
 		}
 
 		//hallgato szobahoz rendelese
 		//van hely a szobaban?
-
 		$szabad = getRoomDefinition($dbh, $szoba);
-
 		$szabadhely = intval($szabad['szabad_ferohely']);
 
 		//van hely, hallgato hozzarendelese
@@ -261,7 +265,7 @@ if(count($_POST)>0){
 			if(count($bekoltozes)>0) $jogviszony = true;
 
 			if ($jogviszony){
-				
+
 				assignStudentWithLegalRelationshipToRoom($dbh, $hallgato, $kollegium, $szoba);
 			}
 			else{
@@ -271,13 +275,13 @@ if(count($_POST)>0){
 
 			// update hallgato_felvettek
 			updateRoomStatusOnStudentSemesterList($dbh, $hallgato, 1);
-			
+
 			$ujszabadhely = $szabadhely-1;
-			
+
 			if($ujszabadhely>=0){
 
 				updateRoomDefFreeSpace($dbh, $szoba, $ujszabadhely);
-				
+
 				$errorCode = 0;
 				$message = 'Sikeres hozzárendelés!';
 				printResponse($errorCode,$message,array("szoba"=>$szoba,"szabad"=>$ujszabadhely),null);
@@ -307,80 +311,31 @@ if(count($_POST)>0){
 			printResponse(1,"Hiányzó id!",null,null);
 		}
 
-		try {
-			$dbh = new PDO("mysql:host=$dbhost;dbname=$dbname", $dbuser, $dbpass );
-		}catch (PDOException $e) {
-			echo 'Adatbázis kapcsolat nem jött létre: ' . $e->getMessage();
-			die();
+		$dbh = connectToDB();
+		if(!$dbh){
+			printResponse(2,"Adatbázis kapcsolat nem jött létre", null, null);
 		}
 
-		$dbh -> exec("SET CHARACTER SET utf8");
-		$dbh -> exec("SET collation_connection = 'utf8_hungarian_ci'");
 
 		// korabbi bejegyzesek?
-
-		$sql = 'SELECT reszletek_id, bekoltozes_datuma FROM kolibri_szoba_reszletek
-						WHERE tanev_id = :tanev
-						AND kollegium_id = :kollegium
-						AND hallgato_id = :hallgato
-						AND szoba_id = :szoba 
-						ORDER BY reszletek_id DESC
-						LIMIT 1';
-
-		$sth2 = $dbh->prepare($sql);
-
-		$sth2->bindParam(':hallgato', $hallgato);
-		$sth2->bindParam(':tanev', $_SESSION['beallitasok']['aktualis_tanev_id']);
-		$sth2->bindParam(':kollegium', $kollegium);
-		$sth2->bindParam(':szoba', $szoba);
-		$sth2->execute();
-
-		$bekoltozes = $sth2->fetch(PDO::FETCH_ASSOC);
+		$bekoltozes = getStudentSemesterEntriesToRoom($dbh, $hallgato, $kollegium, $szoba);
 
 		if($bekoltozes['bekoltozes_datuma'] == "0000-00-00 00:00:00"){
 			//bejegyzes torlese
-			$sql = "DELETE FROM kolibri_szoba_reszletek
-				WHERE hallgato_id = :hallgato
-				AND tanev_id = :tanev
-				AND kollegium_id = :kollegium
-				AND szoba_id = :szoba";
-			$sth = $dbh->prepare($sql);
-
-			$sth->bindParam(':hallgato', $hallgato);
-			$sth->bindParam(':tanev', $_SESSION['beallitasok']['aktualis_tanev_id']);
-			$sth->bindParam(':kollegium', $kollegium);
-			$sth->bindParam(':szoba', $szoba);
-			$sth->execute();
-
+			removeStudentFromRoom($dbh, $hallgato, $kollegium, $szoba);
 		}
 		else{
-			$sql = 'UPDATE kolibri_szoba_reszletek SET kikoltozes_datuma = :kikoltozes WHERE reszletek_id = :reszletek';
-			$sth = $dbh->prepare($sql);
-			$sth->bindParam(':kikoltozes', date('Y-m-d H:i:s'));
-			$sth->bindParam(':reszletek', $bekoltozes['reszletek_id']);
-			$sth->execute();
+				
+			removeStudentWithLegalRelationshipFromRoom($dbh, $bekoltozes['reszletek_id']);
 		}
 
-
 		// update hallgato_felvettek
-
-		$sqlu = "UPDATE kolibri_felvettek SET szobaba_beosztva = '0' WHERE hallgato_id = :hallgato";
-
-		$sth2 = $dbh->prepare($sqlu);
-		$sth2->bindParam(':hallgato', $hallgato, PDO::PARAM_INT);
-		$sth2->execute();
+		updateRoomStatusOnStudentSemesterList($dbh, $hallgato, 0);
 
 		//update szabadhely!
 		//mennyi hely van
-		$sql = 'SELECT *
-					FROM kolibri_szoba_definiciok
-					WHERE szoba_def_id = :szoba';
+		$szabad = getRoomDefinition($dbh, $szoba);
 
-		$sth = $dbh->prepare($sql);
-		$sth->bindParam(':szoba', $szoba);
-		$sth->execute();
-
-		$szabad = $sth->fetch(PDO::FETCH_ASSOC);
 		$szabadhely = intval($szabad['szabad_ferohely']);
 		$maxhely = intval($szabad['max_ferohely']);
 
@@ -388,13 +343,7 @@ if(count($_POST)>0){
 
 		if($ujszabadhely<=$maxhely){
 			//update szabadhely
-			$sqlu2 = "UPDATE kolibri_szoba_definiciok SET szabad_ferohely = :szabadhely WHERE szoba_def_id = :szoba";
-
-			$sth3 = $dbh->prepare($sqlu2);
-			$sth3->bindParam(':szabadhely', $ujszabadhely, PDO::PARAM_INT);
-			$sth3->bindParam(':szoba', $szoba, PDO::PARAM_INT);
-			$sth3->execute();
-
+			updateRoomDefFreeSpace($dbh, $szoba, $ujszabadhely);
 		}
 
 		printResponse(0,"Hallgató eltávolítva a szobából.",array("szoba"=>$szoba,"szabad"=>$ujszabadhely),null);
@@ -410,36 +359,20 @@ if(count($_POST)>0){
 			printResponse(1,"Hiányzó id!",null,null);
 		}
 
-		try {
-			$dbh = new PDO("mysql:host=$dbhost;dbname=$dbname", $dbuser, $dbpass );
-		}catch (PDOException $e) {
-			echo 'Adatbázis kapcsolat nem jött létre: ' . $e->getMessage();
-			die();
+		$dbh = connectToDB();
+		if(!$dbh){
+			printResponse(2,"Adatbázis kapcsolat nem jött létre", null, null);
 		}
 
-		$dbh -> exec("SET CHARACTER SET utf8");
-		$dbh -> exec("SET collation_connection = 'utf8_hungarian_ci'");
+		$bejegyzes = getRoomDetailsByID($dbh, $reszletek);
 
-		$sql = 'SELECT bekoltozes_datuma, kikoltozes_datuma
-				FROM kolibri_szoba_reszletek
-				WHERE reszletek_id = :reszletek';
-
-		$sth = $dbh->prepare($sql);
-		$sth->bindParam(':reszletek', $reszletek);
-		$sth->execute();
-
-		$bejegyzes = $sth->fetch(PDO::FETCH_ASSOC);
 		if($bejegyzes['kikoltozes_datuma'] !="0000-00-00 00:00:00" &&  $bejegyzes['bekoltozes_datuma'] !="0000-00-00 00:00:00"){
-			printResponse(2,"Hibás rekord!",null,null);
 
+			printResponse(2,"Hibás rekord!",null,null);
 		}
 		else{
-			$sql = 'UPDATE kolibri_szoba_reszletek SET bekoltozes_datuma = :bekoltozes WHERE reszletek_id = :reszletek';
-			$sth = $dbh->prepare($sql);
-			$sth->bindParam(':reszletek', $reszletek);
-			$sth->bindParam(':bekoltozes', date('Y-m-d H:i:s'));
-			$sth->execute();
-
+			//Koll jogviszony letrehozas
+			createLegalRelationshipByID($dbh, $reszletek);
 			printResponse(0,"",null,null);
 		}
 	}
@@ -454,35 +387,16 @@ if(count($_POST)>0){
 			printResponse(1,"Hiányzó id!",null,null);
 		}
 
-		try {
-			$dbh = new PDO("mysql:host=$dbhost;dbname=$dbname", $dbuser, $dbpass );
-		}catch (PDOException $e) {
-			echo 'Adatbázis kapcsolat nem jött létre: ' . $e->getMessage();
-			die();
+		$dbh = connectToDB();
+		if(!$dbh){
+			printResponse(2,"Adatbázis kapcsolat nem jött létre", null, null);
 		}
 
-		$dbh -> exec("SET CHARACTER SET utf8");
-		$dbh -> exec("SET collation_connection = 'utf8_hungarian_ci'");
-
-		$sql = 'SELECT szobaba_beosztva
-				FROM kolibri_felvettek
-				WHERE hallgato_id = :hallgato';
-
-		$sth = $dbh->prepare($sql);
-		$sth->bindParam(':hallgato', $hallgato);
-		$sth->execute();
-
-		$allapot = $sth->fetch(PDO::FETCH_ASSOC);
+		$allapot = getStudentRoomStatus($dbh, $hallgato);
 
 		if($allapot['szobaba_beosztva'] == "0"){
-
-			$sql = 'DELETE FROM kolibri_felvettek
-				WHERE hallgato_id = :hallgato';
-
-			$sth = $dbh->prepare($sql);
-			$sth->bindParam(':hallgato', $hallgato);
-			$sth->execute();
-
+			//ha nincs szobába beosztva, szabadon törölhető a felvettek listájáról
+			removeStudentFromEnrollmentList($dbh, $hallgato);
 			printResponse(0,"Kollégiumi jogviszony megszüntetve.",null,null);
 		}
 		else{
@@ -495,23 +409,12 @@ if(count($_POST)>0){
 
 		if(isset($_POST['hallgid']) && strlen($_POST['hallgid'])>0){
 
-
-			try {
-				$dbh = new PDO("mysql:host=$dbhost;dbname=$dbname", $dbuser, $dbpass );
-			}catch (PDOException $e) {
-				echo 'Adatbázis kapcsolat nem jött létre: ' . $e->getMessage();
-				die();
+			$dbh = connectToDB();
+			if(!$dbh){
+				printResponse(2,"Adatbázis kapcsolat nem jött létre", null, null);
 			}
 
-			$dbh -> exec("SET CHARACTER SET utf8");
-			$dbh -> exec("SET collation_connection = 'utf8_hungarian_ci'");
-
-			$sql = 'SELECT * FROM kolibri_hallgatok WHERE hallgato_id = :hallgato';
-			$sth = $dbh->prepare($sql);
-			$sth->bindParam(':hallgato', $_POST['hallgid']);
-			$sth->execute();
-
-			$h = $sth->fetch(PDO::FETCH_ASSOC);
+			$h = getStudentByID($dbh, $_POST['hallgid']);
 
 			if(empty($h['hallgato_id'])){
 				printResponse(15,"Nem találom a hallgatót.",null,null);
@@ -525,35 +428,15 @@ if(count($_POST)>0){
 			$h['hallgato_kepzesi_forma'] == $_POST['kepzesiforma'] &&
 			$h['hallgato_penzugyi_kod'] == $_POST['penzugyikod']){
 
-
 				printResponse(0,"Hallgató adatai nem változtak.",null,null);
 			}
 			else{
 
-				$sql = "UPDATE kolibri_hallgatok SET
-							hallgato_neve = :nev,
-							hallgato_email = :email,
-							hallgato_telefon = :telefon,
-							hallgato_lakcim = :lakcim,
-							hallgato_allampolgarsag = :allampolgarsag,
-							hallgato_kepzesi_forma = :kepzesiforma,
-							hallgato_penzugyi_kod = :penzugyikod
-            			WHERE hallgato_id = :hid";
-
-				$sth = $dbh->prepare($sql);
-				$sth->bindParam(':nev', $_POST['nev']);
-				$sth->bindParam(':email', $_POST['email']);
-				$sth->bindParam(':telefon', $_POST['telefon']);
-				$sth->bindParam(':lakcim', $_POST['lakcim']);
-				$sth->bindParam(':allampolgarsag', $_POST['allampolgarsag']);
-				$sth->bindParam(':kepzesiforma', $_POST['kepzesiforma']);
-				$sth->bindParam(':penzugyikod', $_POST['penzugyikod']);
-				$sth->bindParam(':hid', $_POST['hallgid']);
-				$sth->execute();
+				updateStudentByID($dbh, $_POST['nev'], $_POST['email'], $_POST['telefon'], $_POST['lakcim'],
+				$_POST['allampolgarsag'], $_POST['kepzesiforma'], $_POST['penzugyikod'], $_POST['hallgid']);
 
 				printResponse(0,"Hallgató adatai frissítve.",null,null);
 			}
-
 		}
 		else{
 			printResponse(15,"Hiányzó hallgató azonosító",null,null);
@@ -567,119 +450,44 @@ if(count($_POST)>0){
 		isset($_POST['mire']) && strlen($_POST['mire'])>0 &&
 		isset($_POST['keresoszo']) && strlen($_POST['keresoszo'])>0){
 
-
-			try {
-				$dbh = new PDO("mysql:host=$dbhost;dbname=$dbname", $dbuser, $dbpass );
-			}catch (PDOException $e) {
-				echo 'Adatbázis kapcsolat nem jött létre: ' . $e->getMessage();
-				die();
+			$dbh = connectToDB();
+			if(!$dbh){
+				printResponse(2,"Adatbázis kapcsolat nem jött létre", null, null);
 			}
-
-			$dbh -> exec("SET CHARACTER SET utf8");
-			$dbh -> exec("SET collation_connection = 'utf8_hungarian_ci'");
-
 
 			$cel = $_POST['celcsoport'];
 			$mire = $_POST['mire'];
 			$szo = $_POST['keresoszo'];
 			$kartya = false;
-
-
+				
+			// Cel: Aktualis = aktualis tanevre felvett hallgato
+			// Cel: Osszes = az osszes, valaha bent lako hallgato
 			if($cel == "Aktualis" && $mire == "Nev"){
-				$sql = 'SELECT kolibri_hallgatok.hallgato_id, kolibri_hallgatok.hallgato_neptun_kod,
-					kolibri_hallgatok.hallgato_neve
-					FROM kolibri_felvettek
-					INNER JOIN kolibri_hallgatok
-					ON kolibri_felvettek.hallgato_id = kolibri_hallgatok.hallgato_id
-					WHERE kolibri_hallgatok.hallgato_neve LIKE :nev
-					ORDER BY  kolibri_hallgatok.hallgato_neve
-					LIMIT 15';
 
-				$sth = $dbh->prepare($sql);
-				$keyword = "%$szo%";
-				$sth->bindParam(':nev', $keyword);
+				$result = searchForStudentOnEnrollmentListByName($dbh, $szo);
 			}
 			else if($cel == "Aktualis" && $mire == "Neptun"){
-				$sql = 'SELECT kolibri_hallgatok.hallgato_id, kolibri_hallgatok.hallgato_neptun_kod,
-					kolibri_hallgatok.hallgato_neve
-					FROM kolibri_felvettek
-					INNER JOIN kolibri_hallgatok
-					ON kolibri_felvettek.hallgato_id = kolibri_hallgatok.hallgato_id
-					WHERE kolibri_hallgatok.hallgato_neptun_kod LIKE :neptun
-					ORDER BY  kolibri_hallgatok.hallgato_neve
-					LIMIT 15';
 
-				$sth = $dbh->prepare($sql);
-				$keyword = "%$szo%";
-				$sth->bindParam(':neptun', $keyword);
-
+				$result = searchForStudentOnEnrollmentListByNeptun($dbh, $szo);
 			}
 			else if($cel == "Aktualis" && $mire == "Kartya"){
-				$sql = 'SELECT kolibri_hallgatok.hallgato_id, kolibri_hallgatok.hallgato_neptun_kod,
-					kolibri_hallgatok.hallgato_neve, kolibri_belepokartyak.kartya_szam
-					FROM kolibri_felvettek
-					INNER JOIN kolibri_hallgatok
-					ON kolibri_felvettek.hallgato_id = kolibri_hallgatok.hallgato_id
-					INNER JOIN kolibri_belepokartyak
-					ON kolibri_belepokartyak.hallgato_id = kolibri_felvettek.hallgato_id		
-					WHERE kolibri_belepokartyak.kartya_szam LIKE :kartya
-					AND kolibri_belepokartyak.leadas_datuma = "0000-00-00 00:00:00"	
-					ORDER BY  kolibri_belepokartyak.kartya_szam
-					LIMIT 15';
-					
-				$sth = $dbh->prepare($sql);
-				$keyword = "$szo%";
-				$sth->bindParam(':kartya', $keyword);
+
+				$result = searchForStudentOnEnrollmentListByCard($dbh, $szo);
 				$kartya = true;
 			}
 			else if($cel == "Osszes" && $mire == "Nev"){
-				$sql = 'SELECT kolibri_hallgatok.hallgato_id, kolibri_hallgatok.hallgato_neptun_kod,
-					kolibri_hallgatok.hallgato_neve
-					FROM kolibri_hallgatok
-					WHERE kolibri_hallgatok.hallgato_neve LIKE :nev
-					ORDER BY  kolibri_hallgatok.hallgato_neve
-					LIMIT 15';
-					
-				$sth = $dbh->prepare($sql);
-				$keyword = "%$szo%";
-				$sth->bindParam(':nev', $keyword);
+
+				$result = searchForStudentByName($dbh, $szo);
 			}
 			else if($cel == "Osszes" && $mire == "Neptun"){
-				$sql = 'SELECT kolibri_hallgatok.hallgato_id, kolibri_hallgatok.hallgato_neptun_kod,
-					kolibri_hallgatok.hallgato_neve
-					FROM kolibri_hallgatok
-					WHERE kolibri_hallgatok.hallgato_neptun_kod LIKE :neptun
-					ORDER BY  kolibri_hallgatok.hallgato_neve
-					LIMIT 15';
-					
-				$sth = $dbh->prepare($sql);
-				$keyword = "%$szo%";
-				$sth->bindParam(':neptun', $keyword);
-					
+
+				$result = searchForStudentByNeptun($dbh, $szo);
 			}
 			else if($cel == "Osszes" && $mire == "Kartya"){
-				$sql = 'SELECT kolibri_hallgatok.hallgato_id, kolibri_hallgatok.hallgato_neptun_kod,
-					kolibri_hallgatok.hallgato_neve, kolibri_belepokartyak.kartya_szam
-					FROM kolibri_hallgatok
-					INNER JOIN kolibri_belepokartyak
-					ON kolibri_belepokartyak.hallgato_id = kolibri_hallgatok.hallgato_id
-					WHERE kolibri_belepokartyak.kartya_szam LIKE :kartya
-					AND kolibri_belepokartyak.leadas_datuma = "0000-00-00 00:00:00"
-					ORDER BY  kolibri_belepokartyak.kartya_szam
-					LIMIT 15';
-					
-				$sth = $dbh->prepare($sql);
-				$keyword = "$szo%";
-				$sth->bindParam(':kartya', $keyword);
+
+				$result = searchForStudentByCard($dbh, $szo);
 				$kartya = true;
 			}
-
-
-
-
-			$sth->execute();
-			$result = $sth->fetchAll(PDO::FETCH_ASSOC);
-
 
 
 			$tablazat = '<table class="table table-bordered table-hover"><thead><th>Neptun</th><th>Hallgató neve</th>';
@@ -690,9 +498,7 @@ if(count($_POST)>0){
 			$tablazat .= '<th>Adatlap</th>';
 			if ($_SESSION['jog']['hallgato_adatmodositas'] == '1') $tablazat.='<th>Mód.</th>';
 			$tablazat .='<th>Kártya</th>';
-
 			$tablazat .='</thead><tbody>';
-
 
 			foreach($result as $r){
 					
@@ -715,22 +521,11 @@ if(count($_POST)>0){
 
 			$tablazat.='</tbody></table>';
 			printResponse(0,"OK",$tablazat,null);
-
-
 		}
 		else{
 			printResponse(15,"Hiányzó paraméter",null,null);
 		}
-
-
-
-
-
 	}
-
-
-
-
 
 
 
@@ -741,15 +536,6 @@ if(count($_POST)>0){
 		printResponse($errorCode,$message,null,null);
 
 	}
-
-
-
 }
-
-
-
-
-
-
 
 ?>
