@@ -42,11 +42,13 @@ if($_SESSION['jog']['bekoltoztetes'] != "1"){
         	});
         	jQuery('body').on('click', '.bekoltoztet', function () {
         		var id = this.id;
+        		jQuery(this).prop('disabled', true);
         		hallgatoSzobahozRendel(id);
             	});
 
         	jQuery('body').on('click', '.kikoltoztet', function () {
         		var id = this.id;
+        		jQuery(this).prop('disabled', true);
         		hallgatoSzobabolKivesz(id);
             	});
         	

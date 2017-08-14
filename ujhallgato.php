@@ -396,6 +396,7 @@ else{
         jQuery( document ).ready(function() {
 
         	jQuery('body').on('click', '#createNewStudent', function () {
+        		jQuery(this).prop('disabled', true);
         		createNewStudent();
             	});
         	jQuery('body').on('click', '#cancelNewStudent', function () {
@@ -403,6 +404,7 @@ else{
             	});
 
         	jQuery('body').on('click', '#uploadXLS', function () {
+        		jQuery(this).prop('disabled', true);
         		uploadXLS();
             	});
         	

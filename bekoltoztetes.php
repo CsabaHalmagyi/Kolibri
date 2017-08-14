@@ -20,11 +20,13 @@ jQuery('body').on('click', '.hallgatorow', function () {
 	});
 
 jQuery('body').on('click', '.jogviszony_letrehozasa', function () {
+	jQuery(this).prop('disabled', true);
 	var id = this.id;
 	hallgatoJogviszonyLetrehoz(id);
 	});
 
 jQuery('body').on('click', '.jogviszony_megszuntetese', function () {
+	jQuery(this).prop('disabled', true);
 	var id = this.id;
 	hallgatoJogviszonyMegszuntet(id);
 	});
