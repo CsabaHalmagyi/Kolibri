@@ -406,6 +406,18 @@ function getDormsWithFinancialCodes($dbh){
 }
 
 
+function getFinancialCodesByDormId($dbh, $kollegium){
+
+	$sql = "SELECT * FROM kolibri_penzugyi_kodok
+			WHERE kollegium_id = :kollid";
+
+	$sth_penzugy = $dbh->prepare ( $sql );
+	$sth_penzugy->bindParam ( ':kollid', $kollegium );
+	$sth_penzugy->execute ();
+
+	return $sth_penzugy->fetchAll ( PDO::FETCH_ASSOC );
+}
+
 /**
  *
  * Returns the students of a room (using current semester)
@@ -430,6 +442,23 @@ function getRoomDetails($dbh, $koliID, $szobaID){
 
 	return $sth->fetchAll(PDO::FETCH_ASSOC);
 }
+
+
+
+function getDorms($dbh){
+
+	$sql = 'SELECT * FROM kolibri_kollegiumok';
+
+	$sth = $dbh->prepare($sql);
+	$sth->execute();
+
+	return $sth->fetchAll(PDO::FETCH_ASSOC);
+}
+
+
+
+
+
 
 
 /***************************************************************************
@@ -732,7 +761,7 @@ function searchForStudentByCard($dbh, $card){
 					AND kolibri_belepokartyak.leadas_datuma = "0000-00-00 00:00:00"
 					ORDER BY  kolibri_belepokartyak.kartya_szam
 					LIMIT 15';
-		
+
 	$sth = $dbh->prepare($sql);
 	$keyword = "$card%";
 	$sth->bindParam(':kartya', $keyword);
@@ -974,8 +1003,8 @@ function getStudentSemesterEntriesToRoom($dbh, $studentID, $kollID, $roomID){
 
 
 function isStudentInRoom($dbh, $kollegium, $szoba, $hallgato){
-	
-		$sql = 'SELECT reszletek_id, bekoltozes_datuma FROM kolibri_szoba_reszletek
+
+	$sql = 'SELECT reszletek_id, bekoltozes_datuma FROM kolibri_szoba_reszletek
 						WHERE tanev_id = :tanev
 						AND kollegium_id = :kollegium
 						AND hallgato_id = :hallgato
@@ -989,12 +1018,12 @@ function isStudentInRoom($dbh, $kollegium, $szoba, $hallgato){
 	$sth2->bindParam(':kollegium', $kollegium);
 	$sth2->bindParam(':szoba', $roomID);
 	$sth2->execute();
-	
+
 	$result = $sth2->fetchAll(PDO::FETCH_ASSOC);
-	
+
 	if(count($result)>0) return true;
 	return false;
-	
+
 }
 
 
@@ -1164,6 +1193,27 @@ function getStudentRoomStatus($dbh, $hallgato){
 }
 
 
+function getStudentEnrollmentListData($dbh, $student){
+
+	$sql = "SELECT kolibri_kollegiumok.kollegium_id, kolibri_kollegiumok.kollegium_nev
+			FROM kolibri_felvettek
+			INNER JOIN kolibri_kollegiumok
+			ON kolibri_kollegiumok.kollegium_id = kolibri_felvettek.kollegium_id
+			WHERE kolibri_felvettek.tanev_id = :tanev
+			AND kolibri_felvettek.hallgato_id = :hallgato";
+
+	$sth_koli = $dbh->prepare ( $sql );
+	$sth_koli->bindParam ( ':tanev', $_SESSION ['beallitasok'] ['aktualis_tanev_id'] );
+	$sth_koli->bindParam ( ':hallgato', $student );
+	$sth_koli->execute ();
+
+	return $sth_koli->fetch ( PDO::FETCH_ASSOC );
+}
+
+
+
+
+
 /***************************************************************************
  * ADDITIONAL HELPER FUNCTIONS                                             *
  ***************************************************************************/
@@ -1223,6 +1273,60 @@ function getStudentsWithoutRoomNameContains($dbh, $koliID, $name){
 	return $sth->fetchAll(PDO::FETCH_ASSOC);
 }
 
+
+function getSettings($dbh){
+
+	$sql = 'SELECT * FROM kolibri_beallitasok';
+
+	$sth = $dbh->prepare ( $sql );
+	$sth->execute ();
+	return $sth->fetch ( PDO::FETCH_ASSOC );
+}
+
+
+function getSemesters($dbh){
+
+	$sql = "SELECT * FROM kolibri_tanevek";
+	$sth = $dbh->prepare ( $sql );
+	$sth->execute ();
+	return $sth->fetchAll ( PDO::FETCH_ASSOC );
+}
+
+
+function getUser($dbh, $user){
+
+	$sql = "SELECT * FROM kolibri_felhasznalok WHERE felhasznalonev = :felhnev";
+
+	$sth = $dbh->prepare($sql);
+	$sth->bindParam(':felhnev', $user);
+	$sth->execute();
+
+	return $sth->fetch(PDO::FETCH_ASSOC);
+}
+
+
+function updateUserLastLogin($dbh, $userID){
+
+	$sql = "UPDATE kolibri_felhasznalok SET utolso_belepes = :lastLogin
+                        WHERE felhasznalo_id = :userID";
+
+	$sth = $dbh->prepare($sql);
+	$sth->bindParam(':lastLogin', $lastLogin);
+	$sth->bindParam(':userID', $userID);
+
+	$sth->execute();
+}
+
+function getGroupPermissions($dbh, $group){
+
+	$sql = "SELECT * FROM kolibri_jogcsoportok WHERE id = :group";
+
+	$sth = $dbh->prepare($sql);
+	$sth->bindParam(':group', $group);
+	$sth->execute();
+
+	return $sth->fetch(PDO::FETCH_ASSOC);
+}
 
 
 

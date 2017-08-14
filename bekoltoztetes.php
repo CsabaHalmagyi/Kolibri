@@ -1,7 +1,7 @@
 <?php
 require_once 'includes/connection.inc.php';
 is_logged_out();
-require_once 'settings/db.php';
+require_once 'includes/dbservice.inc.php';
 require_once "includes/html_top.inc.php";
 require_once "includes/menu.inc.php";
 
@@ -49,22 +49,15 @@ if($_SESSION['jog']['bekoltoztetes'] != "1"){
 }
 
 
-try {
-	$dbh = new PDO("mysql:host=$dbhost;dbname=$dbname", $dbuser, $dbpass );
-}catch (PDOException $e) {
-	$message = "Adatbázis hiba - ".$e->getMessage();
-	die($message);
-}
+		$dbh = connectToDB();
+		if(!$dbh){
+			echo '<div class="content">
+        <div class="main-content">Adatbázis kapcsolat nem jött létre"</div></div>';
+			require_once "includes/html_bottom.inc.php";
+			die ();
+		}
 
-$dbh -> exec("SET CHARACTER SET utf8");
-$dbh -> exec("SET collation_connection = 'utf8_hungarian_ci'");
-
-$sql = 'SELECT * FROM kolibri_kollegiumok';
-
-$sth = $dbh->prepare($sql);
-$sth->execute();
-
-$kollegiumok = $sth->fetchAll(PDO::FETCH_ASSOC);
+$kollegiumok = getDorms($dbh);
 
 if(count($kollegiumok) == 0) die("Nincs kollégium definiálva az adatbázisban");
 
@@ -73,11 +66,7 @@ if(isset($_GET['kollegium'])){
 }
 else{
 	$kollID = $kollegiumok[0]['kollegium_id'];
-
 }
-
-
-
 
 
 ?>        

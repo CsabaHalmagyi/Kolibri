@@ -4,7 +4,7 @@ is_logged_out ();
 require_once 'includes/html_top.inc.php';
 require_once 'includes/menu.inc.php';
 require_once 'includes/PHPExcel.php';
-require_once 'settings/db.php';
+require_once 'includes/dbservice.inc.php';
 
 if ($_SESSION ['jog'] ['admin'] != "1") {
 	echo '<div class="content">
@@ -13,28 +13,20 @@ if ($_SESSION ['jog'] ['admin'] != "1") {
 	die ();
 }
 
-try {
-	$dbh = new PDO ( "mysql:host=$dbhost;dbname=$dbname", $dbuser, $dbpass );
-} catch ( PDOException $e ) {
-	echo '<div class="content">
-        <div class="main-content">Adatbázis kapcsolat nem jött létre: ' . $e->getMessage ();
-	die ();
-	require_once "includes/html_bottom.inc.php";
-}
+	$dbh = connectToDB();
+	if(!$dbh){
+		echo '<div class="content">
+        <div class="main-content">Adatbázis kapcsolat nem jött létre"</div></div>';
+		require_once "includes/html_bottom.inc.php";
+		die ();
+	}
 
-$dbh->exec ( "SET CHARACTER SET utf8" );
 
-$sql = 'SELECT * FROM kolibri_beallitasok';
+$beallitasok = getSettings($dbh);
 
-$sth = $dbh->prepare ( $sql );
-$sth->execute ();
-$beallitasok = $sth->fetch ( PDO::FETCH_ASSOC );
+$tanevek = getSemesters($dbh);
 
-$sql = "SELECT * FROM kolibri_tanevek";
-$sth = $dbh->prepare ( $sql );
-$sth->execute ();
-$tanevek = $sth->fetchAll ( PDO::FETCH_ASSOC );
-
+/*
 $sql = 'SELECT * FROM kolibri_felvettek WHERE szobaba_beosztva = "1"';
 $sth = $dbh->prepare ( $sql );
 $sth->execute ();
@@ -44,7 +36,7 @@ $sql = 'SELECT * FROM kolibri_felvettek WHERE szobaba_beosztva = "0"';
 $sth = $dbh->prepare ( $sql );
 $sth->execute ();
 $felvettek_szoba_nelkul = $sth->fetchAll ( PDO::FETCH_ASSOC );
-
+*/
 
 ?>
 

@@ -1,6 +1,6 @@
 <?php
 require_once 'includes/connection.inc.php';
-require_once 'settings/db.php';
+require_once 'includes/dbservice.inc.php';
 
 is_logged_in();
 
@@ -18,50 +18,28 @@ if (count($_POST)!=0) {
 	if (count($error)==0) {
 		$md5pass=md5($_POST['jelszo']);
 		$user = $_POST['felhasznalonev'];
-		
-		try {
-			$dbh = new PDO("mysql:host=$dbhost;dbname=$dbname", $dbuser, $dbpass );
-		}catch (PDOException $e) {
-			echo 'Adatbázis kapcsolat nem jött létre: ' . $e->getMessage();
+
+		$dbh = connectToDB();
+		if(!$dbh){
+			echo '<div class="content">
+        <div class="main-content">Adatbázis kapcsolat nem jött létre"</div></div>';
+			require_once "includes/html_bottom.inc.php";
+			die ();
 		}
-		
-		$dbh -> exec("SET CHARACTER SET utf8");
-		$dbh -> exec("SET collation_connection = 'utf8_hungarian_ci'");
-		
-		$sql = "SELECT * FROM kolibri_felhasznalok WHERE felhasznalonev = :felhnev";
-		
-		$sth = $dbh->prepare($sql);
-		$sth->bindParam(':felhnev', $user);
-		$sth->execute();
 
-		$result = $sth->fetch(PDO::FETCH_ASSOC);
-
+		$result = getUser($dbh, $user);
+		
 		if ($result['jelszo'] == $md5pass){
 			if ($result['aktiv'] == "1"){
 				$_SESSION['felhasznalo']=$result;
 				$userID = $result['felhasznalo_id'];
 				$lastLogin = date('Y-m-d H:i:s');
-                                $group = $result['csoport'];
-				$sql = "UPDATE kolibri_felhasznalok SET utolso_belepes = :lastLogin
-                        WHERE felhasznalo_id = :userID";
-
-				$sth = $dbh->prepare($sql);
-				$sth->bindParam(':lastLogin', $lastLogin);
-				$sth->bindParam(':userID', $userID);
+				$group = $result['csoport'];
 				
-				$sth->execute();
+				updateUserLastLogin($dbh, $userID);
 
-				//read user permissions
-				$sql = "SELECT * FROM kolibri_jogcsoportok WHERE id = :group";
-				
-				$sth = $dbh->prepare($sql);
-				$sth->bindParam(':group', $group);
-				$sth->execute();
-				
-				$result = $sth->fetch(PDO::FETCH_ASSOC);
-				$_SESSION['jog'] = $result;
-
-
+				//read group permissions
+				$_SESSION['jog'] = getGroupPermissions($dbh, $group);
 
 				redirect("index.php");
 			}
@@ -112,7 +90,7 @@ if (count($_POST)!=0) {
 	margin-top: 1em;
 }
 
-.navbar-default .navbar-brand, .navbar-default .navbar-brand:hover {
+.navbar-default .navbar-brand,.navbar-default .navbar-brand:hover {
 	color: #fff;
 }
 </style>
@@ -120,7 +98,7 @@ if (count($_POST)!=0) {
 
 	<div class="navbar navbar-default" role="navigation">
 		<div class="navbar-header">
-			<a class="" href=""><span class="navbar-brand">KOLIBRI</span></a>
+			<a class="" href=""><span class="navbar-brand">KOLIBRI</span> </a>
 		</div>
 
 		<div class="navbar-collapse collapse" style="height: 1px;"></div>
@@ -140,20 +118,21 @@ if (count($_POST)!=0) {
 					</div>
 					<div class="form-group">
 						<label>Jelszó</label> <input
-							class="form-control span12 form-control" type="password" id="jelszo" name="jelszo">
+							class="form-control span12 form-control" type="password"
+							id="jelszo" name="jelszo">
 					</div>
-<!-- 					<a href="index.php" class="btn btn-primary pull-right">Bejelentkezés</a> -->
-					<input type="submit" value="Bejelentkezés" class="btn btn-primary"/>
+					<!-- 					<a href="index.php" class="btn btn-primary pull-right">Bejelentkezés</a> -->
+					<input type="submit" value="Bejelentkezés" class="btn btn-primary" />
 					<div class="clearfix"></div>
 				</form>
 				<?php if(count($error)>0){
-					
+
 					foreach($error as $e){
 						echo '<div class="alert-error">';
 						echo $e;
 						echo '</div>';
 					}
-					
+
 				}
 				?>
 			</div>
@@ -161,7 +140,7 @@ if (count($_POST)!=0) {
 
 	</div>
 
-	<?php 
+	<?php
 
 	?>
 	<footer>
