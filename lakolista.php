@@ -1,7 +1,7 @@
 <?php
 require_once 'includes/connection.inc.php';
 is_logged_out();
-require_once 'settings/db.php';
+require_once 'includes/dbservice.inc.php';
 require_once "includes/html_top.inc.php";
 require_once "includes/menu.inc.php";
 

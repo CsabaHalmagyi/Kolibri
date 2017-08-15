@@ -444,8 +444,8 @@ function getRoomDetails($dbh, $koliID, $szobaID){
 }
 
 function getAllRoomsInDorm($dbh, $kollID){
-	
-		$sql = 'SELECT kolibri_szoba_definiciok.szoba_def_id, kolibri_szoba_definiciok.szoba_szam, kolibri_szoba_definiciok.max_ferohely,
+
+	$sql = 'SELECT kolibri_szoba_definiciok.szoba_def_id, kolibri_szoba_definiciok.szoba_szam, kolibri_szoba_definiciok.max_ferohely,
 				kolibri_szoba_definiciok.szabad_ferohely, kolibri_kollegiumok.kollegium_rovid_nev
 				FROM kolibri_szoba_definiciok
 				INNER JOIN kolibri_kollegiumok
@@ -455,7 +455,7 @@ function getAllRoomsInDorm($dbh, $kollID){
 	$sth = $dbh->prepare($sql);
 	$sth->bindParam(':koliid', $kollID);
 	$sth->execute();
-	
+
 	return $sth->fetchAll(PDO::FETCH_ASSOC);
 }
 
@@ -470,9 +470,31 @@ function getDorms($dbh){
 }
 
 
+/**
+ *
+ * Igaz, ha minden szoba_reszlet rendelkezik kikoltozes datummal
+ * @param unknown_type $dbh
+ */
+function isAllBuildingEmpty($dbh){
 
+	$sql = 'SELECT * FROM kolibri_szoba_reszletek
+	WHERE kolibri_szoba_reszletek.kikoltozes_datuma = "0000-00-00 00:00:00"';
 
+	$sth = $dbh->prepare($sql);
+	$sth->execute();
 
+	if($sth->rowCount() == 0) return true;
+	return false;
+
+}
+
+function clearEnrollmentList($dbh){
+
+	$sql = 'TRUNCATE TABLE `kolibri_felvettek`';
+	$sth = $dbh->prepare($sql);
+	$sth->execute();
+
+}
 
 
 /***************************************************************************
@@ -1440,6 +1462,27 @@ function getStudentsWithoutRoom($dbh, $koliID){
 	return $szobatlan_hallgatok;
 }
 
+
+function getStudentsWithRoom($dbh, $koliID){
+	
+		$sql = 'SELECT kolibri_hallgatok.hallgato_id, kolibri_hallgatok.hallgato_neptun_kod,
+					kolibri_hallgatok.hallgato_neve
+					FROM kolibri_felvettek
+					INNER JOIN kolibri_hallgatok
+					ON kolibri_felvettek.hallgato_id = kolibri_hallgatok.hallgato_id
+					WHERE kolibri_felvettek.tanev_id = :tanevid
+					AND kolibri_felvettek.kollegium_id = :kollid
+					AND kolibri_felvettek.szobaba_beosztva = "1"
+					ORDER BY  kolibri_hallgatok.hallgato_neve';
+
+	$sth = $dbh->prepare($sql);
+	$sth->bindParam(':tanevid', $_SESSION['beallitasok']['aktualis_tanev_id']);
+	$sth->bindParam(':kollid', $koliID);
+	$sth->execute();
+
+	return $sth->fetchAll(PDO::FETCH_ASSOC);
+}
+
 function getStudentsWithoutRoomNameContains($dbh, $koliID, $name){
 
 	$sql = 'SELECT kolibri_hallgatok.hallgato_id, kolibri_hallgatok.hallgato_neptun_kod,
@@ -1530,5 +1573,23 @@ function getGroups($dbh){
 	return $sth->fetchAll(PDO::FETCH_ASSOC);
 
 }
+
+/**
+ *
+ * Aktualis tanev beallitas
+ * @param unknown_type $dbh
+ * @param unknown_type $semester
+ */
+function setCurrentSemester($dbh, $semester){
+
+	$sql = "UPDATE `kolibri_beallitasok` SET `aktualis_tanev_id` = :tanevid WHERE `beallitasok_id` = 1";
+
+	$sth = $dbh->prepare($sql);
+	$sth->bindParam(':tanevid', $semester);
+	$sth->execute();
+}
+
+
+
 
 ?>

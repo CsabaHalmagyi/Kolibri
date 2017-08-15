@@ -2,7 +2,7 @@
 
 function tanevvaltas(){
 	
-	var tanev = jQuery("#AktualisFelev").children(":selected").val();
+	var ujtanev = jQuery("#AktualisFelev").children(":selected").val();
 	
 	
 	if(1==1){
@@ -12,18 +12,18 @@ function tanevvaltas(){
 			type : "post",
 			data : {
 				action : "tanevValtas",
-				ujtanev: tanev
+				tanev: ujtanev
 			}
 		}).done(function(data) {
 			if (data.errorCode == 0) {
-
+				alert("Tanév váltás sikeres.");
 			
 			}
 			else if(data.errorCode == 1000){
 				location.reload();
 			} 
 			else {
-				
+				alert(data.message);
 			
 			
 			}
@@ -55,7 +55,8 @@ function tanevzaras(){
 			}
 		}).done(function(data) {
 			if (data.errorCode == 0) {
-
+				
+				alert(data.message);
 			
 			}
 			else if(data.errorCode == 1000){
@@ -63,7 +64,7 @@ function tanevzaras(){
 			} 
 			else {
 				
-			
+				alert(data.message);
 			
 			}
 		}).fail(function() {

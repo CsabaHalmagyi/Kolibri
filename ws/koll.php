@@ -2,7 +2,7 @@
 require_once '../includes/connection.inc.php';
 require_once '../includes/dbservice.inc.php';
 //is_logged_out();
-require_once '../settings/db.php';
+
 
 $errorCode = 0;
 $message = "";
@@ -112,7 +112,7 @@ if(count($_POST)>0){
 
 			$result = revokeCardFromStudent($dbh, $_POST['bejegyzes']);
 			printResponse($result['errorCode'], $result['message'], null, null, null);
-				
+
 		}
 		else{
 			printResponse(1,"Hiányzó adatok!",null, null,null);
@@ -121,6 +121,55 @@ if(count($_POST)>0){
 	}
 	else if($action == "tanevZaras"){
 
+		$dbh = connectToDB();
+		if(!$dbh){
+			printResponse(2,"Adatbázis kapcsolat nem jött létre", null, null, null);
+		}
+
+		//mindket epuletben nulla a szobaval rendelkezo hallgatok szama
+		if(count(getStudentsWithRoom($dbh, 1)) == 0 && count(getStudentsWithRoom($dbh, 2)) == 0){
+			//truncate felvett hallgatok lista
+			clearEnrollmentList($dbh);
+
+			$message = "Tanév lezárva, minden listára felvett hallgató törölve.";
+			printResponse(0,$message,null,null,null);
+		}
+		else{
+
+			$message = "Még vannak hallgatók a kollégium(ok)ban, a tanév nem zárható le.";
+			printResponse(49,$message,null,null,null);
+		}
+
+
+	}
+	else if($action == "tanevValtas"){
+
+		$dbh = connectToDB();
+		if(!$dbh){
+			printResponse(2,"Adatbázis kapcsolat nem jött létre", null, null, null);
+		}
+
+		if(count(getStudentsWithRoom($dbh, 1)) > 0 || count(getStudentsWithRoom($dbh, 2)) > 0){
+
+			$message = "Tanév váltás csak lezárt tanévet követően lehetséges.";
+			printResponse(52,$message,null,null,null);
+		}
+
+
+		if(isset($_POST['tanev']) && !empty($_POST['tanev']) && intval($_POST['tanev']) != 0){
+
+			$tanev = intval($_POST['tanev']);
+			setCurrentSemester($dbh, $tanev);
+
+			$message = "Tanév váltás sikeres.";
+			printResponse(0,$message,null,null,null);
+
+		}
+		else{
+			$errorCode = 39;
+			$message = 'Hibás tanév azonosító!';
+			printResponse($errorCode,$message,null,null,null);
+		}
 
 	}
 
