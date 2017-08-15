@@ -3,7 +3,7 @@ require_once 'includes/connection.inc.php';
 is_logged_out();
 require_once "includes/html_top.inc.php";
 require_once "includes/menu.inc.php";
-require_once 'settings/db.php';
+require_once 'includes/dbservice.inc.php';
 
 
 if($_SESSION['jog']['admin'] != "1"){
@@ -13,21 +13,17 @@ if($_SESSION['jog']['admin'] != "1"){
 	die();
 } 
 
-try {
-	$dbh = new PDO("mysql:host=$dbhost;dbname=$dbname", $dbuser, $dbpass );
-}catch (PDOException $e) {
-	echo 'Adatbázis kapcsolat nem jött létre: ' . $e->getMessage();
-	die();
-}
+		$dbh = connectToDB();
+		if(!$dbh){
+			echo '<div class="content">
+        <div class="main-content">Adatbázis kapcsolat nem jött létre"</div></div>';
+			require_once "includes/html_bottom.inc.php";
+			die ();
+		}
 
-$dbh -> exec("SET CHARACTER SET utf8");
 
-$sql = "SELECT * FROM kolibri_jogcsoportok ORDER BY id";
 
-$sth = $dbh->prepare($sql);
-$sth->execute();
-
-$groups = $sth->fetchAll(PDO::FETCH_ASSOC);
+$groups = getGroups($dbh);
 
 
 ?>

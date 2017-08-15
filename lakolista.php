@@ -25,22 +25,14 @@ require_once "includes/menu.inc.php";
 
 <?php 
 
-	try {
-		$dbh = new PDO("mysql:host=$dbhost;dbname=$dbname", $dbuser, $dbpass );
-	}catch (PDOException $e) {
-		$message = "Adatbázis hiba - ".$e->getMessage();
-		die($message);
+	$dbh = connectToDB();
+	if(!$dbh){
+		echo 'Adatbázis kapcsolat nem jött létre"</div></div>';
+		require_once "includes/html_bottom.inc.php";
+		die ();
 	}
 
-	$dbh -> exec("SET CHARACTER SET utf8");
-	$dbh -> exec("SET collation_connection = 'utf8_hungarian_ci'");
-		
-	$sql = 'SELECT * FROM kolibri_kollegiumok';
-	
-	$sth = $dbh->prepare($sql);
-	$sth->execute();
-	
-	$kollegiumok = $sth->fetchAll(PDO::FETCH_ASSOC);
+	$kollegiumok = getDorms($dbh);
 	
 	if(count($kollegiumok) == 0) die("Nincs kollégium definiálva az adatbázisban");
 
@@ -51,41 +43,9 @@ require_once "includes/menu.inc.php";
 		$kid = $kollegiumok[0]['kollegium_id'];
 	}
 	
-	$sql = 'SELECT kolibri_hallgatok.hallgato_id, 
-				kolibri_hallgatok.hallgato_neptun_kod, 
-				kolibri_hallgatok.hallgato_neve,
-				kolibri_szoba_definiciok.szoba_szam,
-				kolibri_szoba_reszletek.bekoltozes_datuma, 
-				kolibri_kollegiumok.kollegium_rovid_nev
-			FROM kolibri_szoba_reszletek
-			INNER JOIN 
-			kolibri_hallgatok
-			ON kolibri_szoba_reszletek.hallgato_id = kolibri_hallgatok.hallgato_id
-			INNER JOIN
-			kolibri_szoba_definiciok
-			ON kolibri_szoba_reszletek.szoba_id = kolibri_szoba_definiciok.szoba_def_id
-			INNER JOIN kolibri_kollegiumok
-			ON kolibri_szoba_reszletek.kollegium_id = kolibri_kollegiumok.kollegium_id		
-			WHERE kolibri_szoba_reszletek.kikoltozes_datuma = "0000-00-00 00:00:00"
-			AND kolibri_szoba_reszletek.kollegium_id = :kollid
-			AND kolibri_szoba_reszletek.tanev_id = :akttanev
-			ORDER BY kolibri_szoba_definiciok.szoba_szam';
+	$lakok = getAllStudentsFromEnrollmentList($dbh, $kid);
 	
-	$sth = $dbh->prepare($sql);
-	$sth->bindParam(':kollid', $kid);
-	$sth->bindParam(':akttanev', $_SESSION['beallitasok']['aktualis_tanev_id']);
-	$sth->execute();
-	
-	$lakok = $sth->fetchAll(PDO::FETCH_ASSOC);
-	
-	$sql_k = 'SELECT hallgato_id, kartya_szam FROM kolibri_belepokartyak
-			WHERE leadas_datuma = "0000-00-00 00:00:00"';
-	
-	$sth_k = $dbh->prepare($sql_k);
-	$sth_k->execute();
-	$kartyak = $sth_k->fetchAll(PDO::FETCH_ASSOC);
-	
-
+	$kartyak = getActiveCardsWithStudentId($dbh);
 	
 ?>
 

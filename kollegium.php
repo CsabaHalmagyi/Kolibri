@@ -4,20 +4,17 @@ is_logged_out ();
 require_once 'includes/html_top.inc.php';
 require_once 'includes/menu.inc.php';
 require_once 'includes/PHPExcel.php';
-require_once 'settings/db.php';
+require_once 'includes/dbservice.inc.php';
 
 
-try {
-	$dbh = new PDO ( "mysql:host=$dbhost;dbname=$dbname", $dbuser, $dbpass );
-} catch ( PDOException $e ) {
-	echo '<div class="content">
-        <div class="main-content">Adatbázis kapcsolat nem jött létre: ' . $e->getMessage ();
-	die ();
-	require_once "includes/html_bottom.inc.php";
-}
-
-$dbh->exec ( "SET CHARACTER SET utf8" );
-
+		$dbh = connectToDB();
+		if(!$dbh){
+			echo '<div class="content">
+        <div class="main-content">Adatbázis kapcsolat nem jött létre"</div></div>';
+			require_once "includes/html_bottom.inc.php";
+			die ();
+		}
+//TODO: create relevant functions in dbservice and use them!
 
 $sql = 'SELECT * FROM kolibri_felvettek WHERE kollegium_id="1"';
 $sth = $dbh->prepare ( $sql );

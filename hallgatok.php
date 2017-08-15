@@ -1,7 +1,7 @@
 <?php
 require_once 'includes/connection.inc.php';
 is_logged_out();
-require_once 'settings/db.php';
+require_once 'includes/dbservice.inc.php';
 require_once "includes/html_top.inc.php";
 require_once "includes/menu.inc.php";
 ?>
@@ -215,61 +215,26 @@ if(isset($_GET['id'])){
 
 	$hallgid = intval($_GET['id']);
 	
-	try {
-		$dbh = new PDO("mysql:host=$dbhost;dbname=$dbname", $dbuser, $dbpass );
-	}catch (PDOException $e) {
-		echo 'Adatbázis kapcsolat nem jött létre: ' . $e->getMessage();
-		die();
-	}
+    		$dbh = connectToDB();
+		if(!$dbh){
+			echo '<div class="content">
+        <div class="main-content">Adatbázis kapcsolat nem jött létre"</div></div>';
+			require_once "includes/html_bottom.inc.php";
+			die ();
+		}
+
+    
+    
+    $hallgato = getStudentByID($dbh, $hallgid);
 	
-	$dbh -> exec("SET CHARACTER SET utf8");
-	$dbh -> exec("SET collation_connection = 'utf8_hungarian_ci'");
-	
-	$sql = 'SELECT * 
-				FROM kolibri_hallgatok
-				WHERE hallgato_id = :hallgid';
-	
-	$sth_hallgato = $dbh->prepare($sql);
-	$sth_hallgato->bindParam(':hallgid', $hallgid);
-	$sth_hallgato->execute();
-	
-	$hallgato = $sth_hallgato->fetch(PDO::FETCH_ASSOC);
-	
-	
-	if($sth_hallgato){
+	if(hallgato){
 		
 		//get koll adatok
-		$sql = 'SELECT *
-				FROM kolibri_szoba_reszletek szr
-				INNER JOIN kolibri_szoba_definiciok szd
-				ON szr.szoba_id = szd.szoba_def_id
-				INNER JOIN kolibri_tanevek te
-				ON szr.tanev_id = te.tanev_id
-				INNER JOIN kolibri_kollegiumok kk
-				ON szr.kollegium_id = kk.kollegium_id
-				WHERE szr.hallgato_id = :hallgid
-				ORDER BY szr.beosztas_datuma DESC';
-		
-		$sth_adatok = $dbh->prepare($sql);
-		$sth_adatok->bindParam(':hallgid', $hallgid);
-		$sth_adatok->execute();
-		
-		$adatok = $sth_adatok->fetchAll(PDO::FETCH_ASSOC);
-		
-		$sql = 'SELECT * FROM kolibri_belepokartyak 
-			WHERE hallgato_id = :hallgid
-			ORDER BY felvetel_datuma DESC';
-		
-		$sth_kartyak = $dbh->prepare($sql);
-		$sth_kartyak->bindParam(':hallgid', $hallgid);
-		$sth_kartyak->execute();
-		$kartyak = $sth_kartyak->fetchAll(PDO::FETCH_ASSOC);
-		
-		
-		
-		
-		
-		displayHallgato($hallgato,$adatok,$kartyak,null);
+        $adatok = getStudentRoomHistory($dbh, $hallgid);
+
+		$kartyak = getStudentCardHistory($dbh, $hallgid);
+
+        displayHallgato($hallgato,$adatok,$kartyak,null);
 	}
 	else{
 		displayHallgato(null,null,null);

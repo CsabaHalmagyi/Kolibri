@@ -1,30 +1,22 @@
 <?php
 require_once 'includes/connection.inc.php';
 is_logged_out();
-require_once 'settings/db.php';
+require_once 'includes/dbservice.inc.php';
 require_once 'includes/html_top.inc.php';
 require_once 'includes/menu.inc.php';
 
 
 
-try {
-	$dbh = new PDO("mysql:host=$dbhost;dbname=$dbname", $dbuser, $dbpass );
-}catch (PDOException $e) {
-	echo 'Adatbázis kapcsolat nem jött létre: ' . $e->getMessage();
-}
+		$dbh = connectToDB();
+		if(!$dbh){
+			echo '<div class="content">
+        <div class="main-content">Adatbázis kapcsolat nem jött létre"</div></div>';
+			require_once "includes/html_bottom.inc.php";
+			die ();
+		}
 
-$dbh -> exec("SET CHARACTER SET utf8");
-$dbh -> exec("SET collation_connection = 'utf8_hungarian_ci'");
 
-$sql = 'SELECT kolibri_beallitasok.*, kolibri_tanevek.tanev_nev
-				FROM kolibri_beallitasok INNER JOIN kolibri_tanevek
-				ON kolibri_beallitasok.aktualis_tanev_id=kolibri_tanevek.tanev_id';
-
-$sth = $dbh->prepare($sql);
-$sth->execute();
-$beallitasok = $sth->fetchAll(PDO::FETCH_ASSOC);
-
-$_SESSION['beallitasok'] = $beallitasok[0];
+$_SESSION['beallitasok'] = getSettings($dbh);
 ?>
 
 <!--main content starts-->

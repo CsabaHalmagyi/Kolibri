@@ -1,7 +1,7 @@
 <?php
 require_once 'includes/connection.inc.php';
 is_logged_out();
-require_once 'settings/db.php';
+require_once 'includes/dbservice.inc.php';
 require_once "includes/html_top.inc.php";
 require_once "includes/menu.inc.php";
 
@@ -59,33 +59,25 @@ if($_SESSION['jog']['bekoltoztetes'] != "1"){
             });
         </script>
 
-    <div class="content">
-        <div class="main-content">
+<div class="content">
+	<div class="main-content">
 
-<?php 
+	<?php
 
-//ACTION: getRooms
-//
+	//ACTION: getRooms
+	//
 
 
-
-	try {
-		$dbh = new PDO("mysql:host=$dbhost;dbname=$dbname", $dbuser, $dbpass );
-	}catch (PDOException $e) {
-		$message = "Adatbázis hiba - ".$e->getMessage();
-		die($message);
+	$dbh = connectToDB();
+	if(!$dbh){
+		echo 'Adatbázis kapcsolat nem jött létre"</div></div>';
+		require_once "includes/html_bottom.inc.php";
+		die ();
 	}
 
-	$dbh -> exec("SET CHARACTER SET utf8");
-	$dbh -> exec("SET collation_connection = 'utf8_hungarian_ci'");
-		
-	$sql = 'SELECT * FROM kolibri_kollegiumok';
-	
-	$sth = $dbh->prepare($sql);
-	$sth->execute();
-	
-	$kollegiumok = $sth->fetchAll(PDO::FETCH_ASSOC);
-	
+
+	$kollegiumok = getDorms($dbh);
+
 	if(count($kollegiumok) == 0) die("Nincs kollégium definiálva az adatbázisban");
 
 	if(isset($_GET['kollegium'])){
@@ -93,22 +85,11 @@ if($_SESSION['jog']['bekoltoztetes'] != "1"){
 	}
 	else{
 		$kollID = $kollegiumok[0]['kollegium_id'];
-		
 	}
-	
-	$sql = 'SELECT kolibri_szoba_definiciok.szoba_def_id, kolibri_szoba_definiciok.szoba_szam, kolibri_szoba_definiciok.max_ferohely,
-				kolibri_szoba_definiciok.szabad_ferohely, kolibri_kollegiumok.kollegium_rovid_nev
-				FROM kolibri_szoba_definiciok
-				INNER JOIN kolibri_kollegiumok
-				ON kolibri_szoba_definiciok.kollegium_id = kolibri_kollegiumok.kollegium_id
-				WHERE kolibri_szoba_definiciok.kollegium_id = :koliid';
 
-	$sth = $dbh->prepare($sql);
-	$sth->bindParam(':koliid', $kollID);
-	$sth->execute();
+	$szobak = getAllRoomsInDorm($dbh, $kollID);
 
-	if($sth){
-		$szobak = $sth->fetchAll(PDO::FETCH_ASSOC);
+	if($szobak){
 			
 		$szobakRendezett = array();
 		$max_em = 0;
@@ -149,13 +130,13 @@ if($_SESSION['jog']['bekoltoztetes'] != "1"){
 					if ($akt == 0){
 						$responseTable.=' class="nincshely"';
 					}
-						
-						
+
+
 					else {
 						$responseTable.= ' class="vanhely"';
 					}
 					$responseTable.='><b>'.$szobaszam.'</b> ('.$akt.')</td>';
-						
+
 
 				}
 			}
@@ -170,42 +151,42 @@ if($_SESSION['jog']['bekoltoztetes'] != "1"){
 
 
 
-?>        
-        
-        <div class="row">
-        	<div class="col-sm-6 col-md-6">
-        		<select id="koliSelect">
-        		<?php 
-        		if (isset($_GET['kollegium'])){
-        			$kid = $_GET['kollegium'];
-        		}
-        		foreach($kollegiumok as $koll){
-        			
-        			echo '<option value="'.$koll['kollegium_id'].'"';
-        		
-        			if($koll['kollegium_id'] == $kid){
-        				echo ' selected="selected"';
-        			}
-        			echo '>'.$koll['kollegium_nev'].'</option>';
-        		}
-        		?>
-        		</select>
-        	</div>	
-        </div>
-        
-        <div class="row">
-    <div class="col-sm-6 col-md-6">
-        <div class="panel panel-default">
-            <div class="panel-heading no-collapse">Szobák</div>
-            <table class="table table-bordered" id="koliTable">
-            <?php 
-            echo $responseTable;
-            ?>
-            </table>
-        </div>
-    </div>
-    <div class="col-sm-6 col-md-6" id="szobaLakokPanel">
-<!--         <div class="panel panel-default">
+	?>
+
+		<div class="row">
+			<div class="col-sm-6 col-md-6">
+				<select id="koliSelect">
+				<?php
+				if (isset($_GET['kollegium'])){
+					$kid = $_GET['kollegium'];
+				}
+				foreach($kollegiumok as $koll){
+
+					echo '<option value="'.$koll['kollegium_id'].'"';
+
+					if($koll['kollegium_id'] == $kid){
+						echo ' selected="selected"';
+					}
+					echo '>'.$koll['kollegium_nev'].'</option>';
+				}
+				?>
+				</select>
+			</div>
+		</div>
+
+		<div class="row">
+			<div class="col-sm-6 col-md-6">
+				<div class="panel panel-default">
+					<div class="panel-heading no-collapse">Szobák</div>
+					<table class="table table-bordered" id="koliTable">
+					<?php
+					echo $responseTable;
+					?>
+					</table>
+				</div>
+			</div>
+			<div class="col-sm-6 col-md-6" id="szobaLakokPanel">
+				<!--         <div class="panel panel-default">
           <div class="panel-heading no-collapse">Részletek</div>
           	<div id="szobaLakokDIV"></div>
         </div>
@@ -214,28 +195,32 @@ if($_SESSION['jog']['bekoltoztetes'] != "1"){
           	<div class="panel-heading no-collapse">Felvett hallgatók szoba nélkül</div>
           	<div id="hallgatokSzobaNelkulDIV"></div>
         </div> -->
-    </div>
-</div>
-        
-        <div class="row">
-        <div class="col-sm-6 col-md-6">
-       	<table class="table">
-        <tr><td>Szabad férőhelyek: <span class="label vanhely">      </span></td>
-        <td> Szoba tele: <span class="label nincshely">      </span></td>
-        <td>Inaktív szoba:<span class="label inaktivszoba">      </span></td>
-        <td>Hallgató, kollégiumi jogviszony:<span class="fa fa-check">      </span></td>
-        <td>Hallgató, NINCS kollégiumi jogviszony:<span class="fa fa-exclamation">      </span></td>
-        
-        </tr></table>
-        </div>
-        </div>
-        
-        
-        
-        
-        
+			</div>
+		</div>
 
-<!--main content ends-->
-<?php 
-require_once "includes/html_bottom.inc.php";
-?>
+		<div class="row">
+			<div class="col-sm-6 col-md-6">
+				<table class="table">
+					<tr>
+						<td>Szabad férőhelyek: <span class="label vanhely"> </span></td>
+						<td>Szoba tele: <span class="label nincshely"> </span></td>
+						<td>Inaktív szoba:<span class="label inaktivszoba"> </span></td>
+						<td>Hallgató, kollégiumi jogviszony:<span class="fa fa-check"> </span>
+						</td>
+						<td>Hallgató, NINCS kollégiumi jogviszony:<span
+							class="fa fa-exclamation"> </span></td>
+
+					</tr>
+				</table>
+			</div>
+		</div>
+
+
+
+
+
+
+		<!--main content ends-->
+		<?php
+		require_once "includes/html_bottom.inc.php";
+		?>

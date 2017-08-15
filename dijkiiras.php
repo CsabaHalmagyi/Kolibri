@@ -4,7 +4,7 @@ is_logged_out ();
 require_once 'includes/html_top.inc.php';
 require_once 'includes/menu.inc.php';
 require_once 'includes/PHPExcel.php';
-require_once 'settings/db.php';
+require_once 'includes/dbservice.inc.php';
 
 if ($_SESSION ['jog']['hallgato_penzugy'] != "1") {
 	echo '<div class="content">
@@ -18,25 +18,18 @@ if ($_SESSION ['jog']['hallgato_penzugy'] != "1") {
 
 
 //connect to db
-try {
-	$dbh = new PDO("mysql:host=$dbhost;dbname=$dbname", $dbuser, $dbpass );
-}catch (PDOException $e) {
-	echo 'Adatbázis kapcsolat nem jött létre: ' . $e->getMessage();
-	require_once "includes/html_bottom.inc.php";
-	die();
-}
+		$dbh = connectToDB();
+		if(!$dbh){
+			echo '<div class="content">
+        <div class="main-content">Adatbázis kapcsolat nem jött létre"</div></div>';
+			require_once "includes/html_bottom.inc.php";
+			die ();
+		}
 
 
 	//if the form was submitted
 
-
-	$dbh -> exec("SET CHARACTER SET utf8");
-	$dbh -> exec("SET collation_connection = 'utf8_hungarian_ci'");
-	
-	$sql = 'SELECT * FROM kolibri_kollegiumok';
-	$sth = $dbh->prepare($sql);
-	$sth->execute();
-	$koll = $sth->fetchAll(PDO::FETCH_ASSOC);
+	$koll = getDorms($dbh);
 	
 	?>
 	
@@ -153,28 +146,8 @@ if(count($_POST)>0){
 	
 	
 	if ($celcsoport == "mindenkolis"){
-
-		$sql = 'SELECT
-			kolibri_hallgatok.*,'
-				.$tipus_sql.' AS penzugyikod, '
-						.$osszeg.' AS osszeg,
-			kk.kollegium_rovid_nev AS kolinev
-			FROM kolibri_felvettek
-			INNER JOIN kolibri_hallgatok
-			ON kolibri_felvettek.hallgato_id = kolibri_hallgatok.hallgato_id
-			LEFT JOIN kolibri_penzugyi_kodok pk
-			ON kolibri_hallgatok.hallgato_penzugyi_kod = pk.pk_id
-			INNER JOIN kolibri_kollegiumok kk
-			ON kk.kollegium_id = kolibri_felvettek.kollegium_id
-			WHERE kolibri_felvettek.tanev_id = :akttanev
-			AND kolibri_felvettek.kollegium_id = :kollid';
-
-		$sth = $dbh->prepare($sql);
-		$sth->bindParam(':kollid', $koli);
-		$sth->bindParam(':akttanev', $_SESSION['beallitasok']['aktualis_tanev_id']);
-		$sth->execute();
-
-		$lista = $sth->fetchAll(PDO::FETCH_ASSOC);
+        
+        $lista = customReport($dbh, $tipus_sql, $osszeg, $koli);
 
 	}
 	else if($celcsoport == "xlsfilebol"){
@@ -220,26 +193,10 @@ if(count($_POST)>0){
 			
 			
 			foreach($neptunKodok as $nk){
-				$sql = 'SELECT
-			kolibri_hallgatok.*,'
-			.$tipus_sql.' AS penzugyikod, '
-			.$osszeg.' AS osszeg,
-			kk.kollegium_rovid_nev AS kolinev
-			FROM kolibri_felvettek
-			INNER JOIN kolibri_hallgatok
-			ON kolibri_felvettek.hallgato_id = kolibri_hallgatok.hallgato_id
-			INNER JOIN kolibri_penzugyi_kodok pk
-			ON kolibri_hallgatok.hallgato_penzugyi_kod = pk.pk_id
-			INNER JOIN kolibri_kollegiumok kk
-			ON kk.kollegium_id = kolibri_felvettek.kollegium_id
-			WHERE kolibri_felvettek.tanev_id = :akttanev
-			AND kolibri_hallgatok.hallgato_neptun_kod = :neptun';
-				
-				$sth = $dbh->prepare($sql);
-				$sth->bindParam(':akttanev', $_SESSION['beallitasok']['aktualis_tanev_id']);
-				$sth->bindParam(':neptun', $nk);
-				$sth->execute();
-				$lista[] = $sth->fetch(PDO::FETCH_ASSOC);
+                
+                $lista[] = getReportUsingNeptun($dbh, $tipus_sql, $osszeg, $nk);
+                
+
 			}
 		}
 		else{ 
@@ -251,30 +208,9 @@ if(count($_POST)>0){
 	}
 
 	if($tipus == "hallgatoadatai"){
-			$sql = 'SELECT kolibri_hallgatok.hallgato_neptun_kod, 
-				kolibri_szoba_definiciok.szoba_szam,
-				kolibri_szoba_reszletek.bekoltozes_datuma, 
-				kolibri_kollegiumok.kollegium_rovid_nev
-			FROM kolibri_szoba_reszletek
-			INNER JOIN 
-			kolibri_hallgatok
-			ON kolibri_szoba_reszletek.hallgato_id = kolibri_hallgatok.hallgato_id
-			INNER JOIN
-			kolibri_szoba_definiciok
-			ON kolibri_szoba_reszletek.szoba_id = kolibri_szoba_definiciok.szoba_def_id
-			INNER JOIN kolibri_kollegiumok
-			ON kolibri_szoba_reszletek.kollegium_id = kolibri_kollegiumok.kollegium_id		
-			WHERE kolibri_szoba_reszletek.kikoltozes_datuma = "0000-00-00 00:00:00"
-			AND kolibri_szoba_reszletek.kollegium_id = :kollid
-			AND kolibri_szoba_reszletek.tanev_id = :akttanev
-			ORDER BY kolibri_szoba_definiciok.szoba_szam';
-	
-	$sth = $dbh->prepare($sql);
-	$sth->bindParam(':kollid', $koli);
-	$sth->bindParam(':akttanev', $_SESSION['beallitasok']['aktualis_tanev_id']);
-	$sth->execute();
-	
-	$res = $sth->fetchAll(PDO::FETCH_ASSOC);
+        
+        
+        $res = getStudentDetailsByDormReport($dbh, $koli);
 	
 	$szobak = array();
 	
