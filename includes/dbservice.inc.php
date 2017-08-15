@@ -87,16 +87,16 @@ function createNewUser($dbh, $userName, $pass, $firstName, $surName, $group){
 
 	if(isUserNameAvailable($dbh, $userName)){
 
-		$sql = "INSERT INTO kolibri_felhasznalok(
-				felhasznalonev,
-           		vezeteknev,
-            	keresztnev,
-            	jelszo,
-            	regisztracio_idopontja,
-				utolso_belepes,
-				letrehozta,
-				csoport,
-				aktiv) VALUES (
+		$sql = "INSERT INTO `kolibri_felhasznalok`(
+				`felhasznalonev`,
+           		`vezeteknev`,
+            	`keresztnev`,
+            	`jelszo`,
+            	`regisztracio_idopontja`,
+				`utolso_belepes`,
+				`letrehozta`,
+				`csoport`,
+				`aktiv`) VALUES (
 				:felhasznalonev,
             	:vezeteknev,
             	:keresztnev,
@@ -242,18 +242,18 @@ function createNewGroup($dbh, $groupName, $permissions){
 	$csoportok = $sth->fetchAll(PDO::FETCH_ASSOC);
 
 	if(count($csoportok) == 0){
-		$sql = 'INSERT INTO kolibri_jogcsoportok(
-				csoportnev,
-            	hallgato_adatmodositas,
-            	hallgato_nev_szoba,
-            	hallgato_telefonszam,
-            	hallgato_cim,
-				hallgato_penzugy,
-				igazolas,
-				bekoltoztetes,
-				lakolista,
-				statisztika,
-				admin) VALUES (:csoport,';
+		$sql = 'INSERT INTO `kolibri_jogcsoportok`(
+				`csoportnev`,
+            	`hallgato_adatmodositas`,
+            	`hallgato_nev_szoba`,
+            	`hallgato_telefonszam`,
+            	`hallgato_cim`,
+				`hallgato_penzugy`,
+				`igazolas`,
+				`bekoltoztetes`,
+				`lakolista`,
+				`statisztika`,
+				`admin`) VALUES (:csoport,';
 
 		foreach($permissions as $id=>$val){
 			if($val){
@@ -551,7 +551,7 @@ function assignCardToStudent($dbh, $student, $card){
 
 	if(isCardAvailable($dbh, $card)){
 
-		$sql = 'INSERT INTO kolibri_belepokartyak (tanev_id, hallgato_id, kartya_szam, felvetel_datuma)
+		$sql = 'INSERT INTO `kolibri_belepokartyak` (`tanev_id`, `hallgato_id`, `kartya_szam`, `felvetel_datuma`)
 						VALUES(:tanev, :hallgato, :kartya, :felvetel)';
 			
 		$sth = $dbh->prepare($sql);
@@ -838,15 +838,15 @@ function searchForStudentByCard($dbh, $card){
 function createNewStudent($dbh, $nk, $nev, $email, $telefon, $lakcim,
 $allampolgarsag, $kepzesiforma, $penzugyikod){
 
-	$sql = "INSERT INTO kolibri_hallgatok (
-							hallgato_neptun_kod,
-							hallgato_neve,
-							hallgato_email, 
-							hallgato_telefon, 
-							hallgato_lakcim, 
-							hallgato_allampolgarsag, 
-							hallgato_kepzesi_forma, 
-							hallgato_penzugyi_kod) 
+	$sql = "INSERT INTO `kolibri_hallgatok` (
+							`hallgato_neptun_kod`,
+							`hallgato_neve`,
+							`hallgato_email`, 
+							`hallgato_telefon`, 
+							`hallgato_lakcim`, 
+							`hallgato_allampolgarsag`, 
+							`hallgato_kepzesi_forma`, 
+							`hallgato_penzugyi_kod`) 
 						VALUES(:nk,:nev,:email,:telefon, :lakcim, :allampolgarsag, :kepzesiforma,:penzugyikod)";
 
 	$sth = $dbh->prepare($sql);
@@ -906,11 +906,11 @@ $allampolgarsag, $kepzesiforma, $penzugyikod, $hallgatoID){
  */
 function addStudentToEnrollmentList($dbh, $kollID, $hallgID){
 
-	$sql = "INSERT INTO kolibri_felvettek (
-							tanev_id,
-							kollegium_id,
-							hallgato_id,
-							szobaba_beosztva)
+	$sql = "INSERT INTO `kolibri_felvettek` (
+							`tanev_id`,
+							`kollegium_id`,
+							`hallgato_id`,
+							`szobaba_beosztva`)
 							VALUES(:tanev,:kollegium,:hallgato, '0')";
 
 	$sth = $dbh->prepare($sql);
@@ -1209,12 +1209,12 @@ function assignStudentWithLegalRelationshipToRoom($dbh, $studentID, $kollID, $ro
  */
 function assignStudentToRoom($dbh, $studentID, $kollID, $roomID){
 
-	$sql = "INSERT INTO kolibri_szoba_reszletek (
-							hallgato_id,
-							tanev_id,
-							kollegium_id,
-							szoba_id,
-							beosztas_datuma)
+	$sql = "INSERT INTO `kolibri_szoba_reszletek` (
+							`hallgato_id`,
+							`tanev_id`,
+							`kollegium_id`,
+							`szoba_id`,
+							`beosztas_datuma`)
 							VALUES(:hallgato,:tanev,:kollegium, :szoba, :beosztas_datuma)";
 
 	$sth = $dbh->prepare($sql);
