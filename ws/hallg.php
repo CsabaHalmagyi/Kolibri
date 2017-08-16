@@ -50,7 +50,7 @@ if(count($_POST)>0){
 			//if the student exists already, update her
 			if($student != null) {
 				$hid = $student['hallgato_id'];
-				$felvett = getEnrollmentDetails($dbh, $hid);
+				$felvett = getEnrollDetails($dbh, $hid);
 
 				if($felvett['kollegium_id'] == $_POST['kollegium']){
 
