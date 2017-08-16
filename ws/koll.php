@@ -39,10 +39,12 @@ if(count($_POST)>0){
 		}
 
 		$result = getDormsWithFinancialCodes($dbh);
-
+		
+		$tanev = getCurrentSemester($dbh);
+		
 		if($result['kollegiumok'] != null){
 			$message = "Kollégiumok lekérdezve.";
-			printResponse(0,$message,$result['kollegiumok'],$result['penzugyikodok'],null);
+			printResponse(0,$message,$result['kollegiumok'],$result['penzugyikodok'],$tanev);
 		}
 		else{
 			$message = "Kollégium tábla üres.";
