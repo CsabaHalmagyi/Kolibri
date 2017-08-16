@@ -160,7 +160,9 @@ if(count($_POST)>0){
 
 			$tanev = intval($_POST['tanev']);
 			setCurrentSemester($dbh, $tanev);
-
+			
+			$_SESSION['beallitasok'] = getSettings($dbh);
+			
 			$message = "Tanév váltás sikeres.";
 			printResponse(0,$message,null,null,null);
 
