@@ -27,9 +27,18 @@ if(count($_FILES)!=0){
 	$target_dir = $target_dir . basename( "ujhallgatok.xls");
 	//echo "OK";
 	//print_r($_FILES);
-
+	$fname = basename( $_FILES["uploadFile"]["name"]);
+	$ext = pathinfo($fname, PATHINFO_EXTENSION);
+	if($ext != "csv"){
+		echo "Hiba! Kizárólag CSV file formátumban tölthetőek fel az adatok!";
+		echo "</div></div>";
+		require_once "includes/html_bottom.inc.php";
+		die();
+	}
+	
+	
 	if (move_uploaded_file($_FILES["uploadFile"]["tmp_name"], $target_dir)) {
-		echo '<div class="alert alert-success">A file '. basename( $_FILES["uploadFile"]["name"]). ' sikeresen feltöltve.</div><br/><br/>';
+		echo '<div class="alert alert-success">A file '. $fname. ' sikeresen feltöltve.</div><br/><br/>';
 
 		//load xls
 		class SpecialValueBinder extends PHPExcel_Cell_DefaultValueBinder implements PHPExcel_Cell_IValueBinder
@@ -94,7 +103,7 @@ if(count($_FILES)!=0){
 		}
 
 		//if validation is OK
-
+		//var_dump($excelData);
 
 		//connect to db
 		$dbh = connectToDB();
@@ -171,11 +180,11 @@ if(count($_FILES)!=0){
 			$hallgato = getStudentByNeptun($dbh, $nk);
 
 			//if the student exists already, update her
-			if(count($hallgato) == 1) {
-				$hid = $hallgato[0]['hallgato_id'];
+			if($hallgato['hallgato_id'] != null) {
+				$hid = $hallgato['hallgato_id'];
 
 				$felvett =  getEnrollDetails($dbh, $hid);
-
+				
 				if($felvett['kollegium_id'] == $kollegiumok[$felveve]){
 
 

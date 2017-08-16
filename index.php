@@ -15,8 +15,8 @@ require_once 'includes/menu.inc.php';
 			die ();
 		}
 
-
-$_SESSION['beallitasok'] = getSettings($dbh);
+$settings = getCurrentSemester($dbh);
+$_SESSION['beallitasok'] = $settings[0];
 ?>
 
 <!--main content starts-->
@@ -39,7 +39,7 @@ $_SESSION['beallitasok'] = getSettings($dbh);
  -->        
         <div class="main-content">
 <?php 
-var_dump($_SESSION);
+//var_dump($_SESSION);
 
 ?>            
 

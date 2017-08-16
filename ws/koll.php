@@ -39,9 +39,9 @@ if(count($_POST)>0){
 		}
 
 		$result = getDormsWithFinancialCodes($dbh);
-		
+
 		$tanev = getCurrentSemester($dbh);
-		
+
 		if($result['kollegiumok'] != null){
 			$message = "Kollégiumok lekérdezve.";
 			printResponse(0,$message,$result['kollegiumok'],$result['penzugyikodok'],$tanev);
@@ -162,9 +162,10 @@ if(count($_POST)>0){
 
 			$tanev = intval($_POST['tanev']);
 			setCurrentSemester($dbh, $tanev);
-			
-			$_SESSION['beallitasok'] = getSettings($dbh);
-			
+				
+			$settings = getCurrentSemester($dbh);
+			$_SESSION['beallitasok'] = $settings[0];
+				
 			$message = "Tanév váltás sikeres.";
 			printResponse(0,$message,null,null,null);
 

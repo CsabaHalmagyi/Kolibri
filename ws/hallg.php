@@ -58,7 +58,7 @@ if(count($_POST)>0){
 					$_POST['lakcim'], $_POST['allampolgarsag'], $_POST['kepzesiforma'],
 					$_POST['penzugyikod'], $hid);
 
-					printResponse(0,"A hallgató már szerepel a hallgató adatbázisban, frissítem az adatait",null,null);
+					printResponse(0,"A hallgató már szerepel a hallgató adatbázisban, frissítem az adatait. ID:".$hid,null,null);
 				}
 				else if(strlen($felvett['kollegium_id'])>0 && $felvett['kollegium_id'] != $_POST['kollegium']){
 
@@ -74,7 +74,7 @@ if(count($_POST)>0){
 
 					//hozzáadás a felvettekhez
 					addStudentToEnrollmentList($dbh, $_POST['kollegium'], $hid);
-					printResponse(0,"A hallgató már szerepel a hallgató adatbázisban, frissítem az adatait",null,null);
+					printResponse(0,"A hallgató már szerepel a hallgató adatbázisban, frissítem az adatait. ID:".$hid,null,null);
 				}
 			}
 			//this is a new student, insert and add to felvettek table
@@ -86,9 +86,12 @@ if(count($_POST)>0){
 
 				//if inserting the new student was successful
 				if($hid){
-					addStudentToEnrollmentList($dbh, $_POST['kollegium'], $hid);
+					$error = addStudentToEnrollmentList($dbh, $_POST['kollegium'], $hid);
 
-					$message = 'Hallgató adatai rögzítve';
+					$message = 'Hallgató adatai rögzítve. ID:'.$hid;
+					
+					//file_put_contents('log.txt', print_r($error, true));
+					
 					printResponse(0,$message,null,null);
 				}
 				else{

@@ -8,6 +8,7 @@
 //GLOBALS
 var Kollegiumok = [];
 var Penzugyikodok = [];
+var Tanev = [];
 
 function getDorms(){
 	var jqxhr = jQuery.ajax({
@@ -21,7 +22,7 @@ function getDorms(){
 			//adding data to globals
 			Kollegiumok = data.data;
 			Penzugyikodok = data.data2;
-			
+			Tanev = data.data3;
 				displayNewStudentForm();
 				displayStudentUploadForm();
 

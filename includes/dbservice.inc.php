@@ -918,6 +918,7 @@ function addStudentToEnrollmentList($dbh, $kollID, $hallgID){
 	$sth->bindParam(':kollegium',  $kollID);
 	$sth->bindParam(':hallgato', $hallgID);
 	$sth->execute();
+	
 }
 
 
@@ -1464,8 +1465,8 @@ function getStudentsWithoutRoom($dbh, $koliID){
 
 
 function getStudentsWithRoom($dbh, $koliID){
-	
-		$sql = 'SELECT kolibri_hallgatok.hallgato_id, kolibri_hallgatok.hallgato_neptun_kod,
+
+	$sql = 'SELECT kolibri_hallgatok.hallgato_id, kolibri_hallgatok.hallgato_neptun_kod,
 					kolibri_hallgatok.hallgato_neve
 					FROM kolibri_felvettek
 					INNER JOIN kolibri_hallgatok
@@ -1527,6 +1528,15 @@ function getSemesters($dbh){
 	return $sth->fetchAll ( PDO::FETCH_ASSOC );
 }
 
+function getSemesterByID($dbh, $id){
+
+	$sql = "SELECT * FROM kolibri_tanevek
+	WHERE tanev_id = :id";
+	$sth = $dbh->prepare ( $sql );
+		$sth->bindParam(':id', $id);
+	$sth->execute ();
+	return $sth->fetch ( PDO::FETCH_ASSOC );
+}
 
 function getUser($dbh, $user){
 
@@ -1590,6 +1600,18 @@ function setCurrentSemester($dbh, $semester){
 }
 
 
+function getCurrentSemester($dbh){
+
+	$sql = "SELECT kt.*, kb.* FROM kolibri_beallitasok kb
+	INNER JOIN kolibri_tanevek kt 
+	ON kb.aktualis_tanev_id = kt.tanev_id";
+
+	$sth = $dbh->prepare($sql);
+	$sth->execute();
+
+	return $sth->fetchAll(PDO::FETCH_ASSOC);
+
+}
 
 
 ?>
