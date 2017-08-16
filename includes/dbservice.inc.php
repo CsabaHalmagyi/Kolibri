@@ -943,18 +943,19 @@ function removeStudentFromEnrollmentList($dbh, $hallgID){
 function getStudentBeKikoltoztetLista($dbh, $name, $kollID){
 
 	$sql = 'SELECT *, kh.hallgato_id as hallg_azon
-					FROM kolibri_felvettek kf
-    				inner join kolibri_hallgatok kh on kf.hallgato_id = kh.hallgato_id
-    				left join kolibri_szoba_reszletek ksr on kh.hallgato_id = ksr.hallgato_id and not exists(
-            		select 1
-            		from kolibri_szoba_reszletek ksr2
-            		where ksr.hallgato_id = ksr2.hallgato_id
-                	and ksr2.reszletek_id > ksr.reszletek_id
-        			)
-    				left join kolibri_szoba_definiciok ksd on ksr.szoba_id = ksd.szoba_def_id
-					WHERE kh.hallgato_neve like :nev
-					AND kf.kollegium_id = :kollid
-					LIMIT 10';
+ FROM kolibri_felvettek kf
+    inner join kolibri_hallgatok kh on kf.hallgato_id = kh.hallgato_id
+    left join kolibri_szoba_reszletek ksr on kh.hallgato_id = ksr.hallgato_id and kf.tanev_id = ksr.tanev_id and not exists(
+          select 1
+          from kolibri_szoba_reszletek ksr2
+          where ksr.hallgato_id = ksr2.hallgato_id
+           and ksr.tanev_id = ksr2.tanev_id
+             and ksr2.reszletek_id > ksr.reszletek_id
+       )
+    join kolibri_szoba_definiciok ksd on ksr.szoba_id = ksd.szoba_def_id
+ WHERE kh.hallgato_neve like :nev
+ AND kf.kollegium_id = :kollid
+ LIMIT 10';
 
 	$sth = $dbh->prepare($sql);
 	$keyword = $name;
