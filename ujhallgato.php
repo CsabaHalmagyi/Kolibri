@@ -27,15 +27,6 @@ if(count($_FILES)!=0){
 	$target_dir = $target_dir . basename( "ujhallgatok.xls");
 	//echo "OK";
 	//print_r($_FILES);
-	$fname = basename( $_FILES["uploadFile"]["name"]);
-	$ext = pathinfo($fname, PATHINFO_EXTENSION);
-	if($ext != "csv"){
-		echo "Hiba! Kizárólag CSV file formátumban tölthetőek fel az adatok!";
-		echo "</div></div>";
-		require_once "includes/html_bottom.inc.php";
-		die();
-	}
-	
 	
 	if (move_uploaded_file($_FILES["uploadFile"]["tmp_name"], $target_dir)) {
 		echo '<div class="alert alert-success">A file '. $fname. ' sikeresen feltöltve.</div><br/><br/>';
