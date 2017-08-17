@@ -3,7 +3,7 @@
                 <hr>
 
                
-                <p class="pull-right">KOLIBRI @ Halmágyi Csaba, Varga Imre 2011 - 2016</p>
+                <p class="pull-right">KOLIBRI @ Halmágyi Csaba, Varga Imre 2011 - 2017</p>
                 <div style="clear:both;"></div>
             </footer>
         </div>
