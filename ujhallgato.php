@@ -74,14 +74,14 @@ if(count($_FILES)!=0){
 		//validation
 
 		if(strtolower($excelData[0][0]) != "neptun") $errors[] = 'A fejléc első mezője "neptun" kell legyen.';
-		if(strtolower($excelData[0][1]) != "név") $errors[] = 'A fejléc második mezője "név" kell legyen.';
+		if(strtolower($excelData[0][1]) != "nev") $errors[] = 'A fejléc második mezője "nev" kell legyen.';
 		if(strtolower($excelData[0][2]) != "email") $errors[] = 'A fejléc harmadik mezője "email" kell legyen.';
 		if(strtolower($excelData[0][3]) != "telefon") $errors[] = 'A fejléc negyedik mezője "telefon" kell legyen.';
-		if(strtolower($excelData[0][4]) != "lakcím") $errors[] = 'A fejléc ötödik mezője "lakcím" kell legyen.';
-		if(strtolower($excelData[0][5]) != "állampolgárság") $errors[] = 'A fejléc hatodik mezője "állampolgárság" kell legyen.';
-		if(strtolower($excelData[0][6]) != "képzésiforma") $errors[] = 'A fejléc hetedik mezője "képzésiforma" kell legyen.';
-		if(strtolower($excelData[0][7]) != "felvéve") $errors[] = 'A fejléc nyolcadik mezője "felvéve" kell legyen.';
-		if(strtolower($excelData[0][8]) != "finanszírozás") $errors[] = 'A fejléc kilencedik mezője "finanszírozás" kell legyen.';
+		if(strtolower($excelData[0][4]) != "lakcim") $errors[] = 'A fejléc ötödik mezője "lakcim" kell legyen.';
+		if(strtolower($excelData[0][5]) != "allampolgarsag") $errors[] = 'A fejléc hatodik mezője "allampolgarsag" kell legyen.';
+		if(strtolower($excelData[0][6]) != "kepzesiforma") $errors[] = 'A fejléc hetedik mezője "kepzesiforma" kell legyen.';
+		if(strtolower($excelData[0][7]) != "felveve") $errors[] = 'A fejléc nyolcadik mezője "felveve" kell legyen.';
+		if(strtolower($excelData[0][8]) != "finanszirozas") $errors[] = 'A fejléc kilencedik mezője "finanszirozas" kell legyen.';
 
 
 		if(!empty($errors)){
