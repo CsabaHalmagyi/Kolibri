@@ -88,6 +88,7 @@ function createNewUser($dbh, $userName, $pass, $firstName, $surName, $group){
 	if(isUserNameAvailable($dbh, $userName)){
 
 		$sql = "INSERT INTO `kolibri_felhasznalok`(
+				`felhasznalo_id`,
 				`felhasznalonev`,
            		`vezeteknev`,
             	`keresztnev`,
@@ -96,7 +97,7 @@ function createNewUser($dbh, $userName, $pass, $firstName, $surName, $group){
 				`utolso_belepes`,
 				`letrehozta`,
 				`csoport`,
-				`aktiv`) VALUES (
+				`aktiv`) VALUES (NULL,
 				:felhasznalonev,
             	:vezeteknev,
             	:keresztnev,
