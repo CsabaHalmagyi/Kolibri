@@ -88,7 +88,6 @@ function createNewUser($dbh, $userName, $pass, $firstName, $surName, $group){
 	if(isUserNameAvailable($dbh, $userName)){
 
 		$sql = "INSERT INTO `kolibri_felhasznalok`(
-				`felhasznalo_id`,
 				`felhasznalonev`,
            		`vezeteknev`,
             	`keresztnev`,
@@ -97,7 +96,7 @@ function createNewUser($dbh, $userName, $pass, $firstName, $surName, $group){
 				`utolso_belepes`,
 				`letrehozta`,
 				`csoport`,
-				`aktiv`) VALUES (NULL,
+				`aktiv`) VALUES (
 				:felhasznalonev,
             	:vezeteknev,
             	:keresztnev,
@@ -552,8 +551,8 @@ function assignCardToStudent($dbh, $student, $card){
 
 	if(isCardAvailable($dbh, $card)){
 
-		$sql = 'INSERT INTO `kolibri_belepokartyak` (`tanev_id`, `hallgato_id`, `kartya_szam`, `felvetel_datuma`)
-						VALUES(:tanev, :hallgato, :kartya, :felvetel)';
+		$sql = 'INSERT INTO `kolibri_belepokartyak` (`tanev_id`, `hallgato_id`, `kartya_szam`, `felvetel_datuma`, `leadas_datuma`)
+						VALUES(:tanev, :hallgato, :kartya, :felvetel, "0000-00-00 00:00:00")';
 			
 		$sth = $dbh->prepare($sql);
 		$sth->bindParam(':tanev', $_SESSION['beallitasok']['aktualis_tanev_id']);
@@ -1185,8 +1184,9 @@ function assignStudentWithLegalRelationshipToRoom($dbh, $studentID, $kollID, $ro
 							`kollegium_id`,
 							`szoba_id`,
 							`beosztas_datuma`,
-							`bekoltozes_datuma`)
-							VALUES(:hallgato,:tanev,:kollegium, :szoba, :beosztas_datuma,:bekoltozes_datuma)";
+							`bekoltozes_datuma`,
+							`kikoltozes_datuma`)
+							VALUES(:hallgato,:tanev,:kollegium, :szoba, :beosztas_datuma,:bekoltozes_datuma, '0000-00-00 00:00:00')";
 
 	$sth = $dbh->prepare($sql);
 
@@ -1217,8 +1217,11 @@ function assignStudentToRoom($dbh, $studentID, $kollID, $roomID){
 							`tanev_id`,
 							`kollegium_id`,
 							`szoba_id`,
-							`beosztas_datuma`)
-							VALUES(:hallgato,:tanev,:kollegium, :szoba, :beosztas_datuma)";
+							`beosztas_datuma`,
+							`bekoltozes_datuma`,
+							`kikoltozes_datuma` )
+							VALUES(:hallgato,:tanev,:kollegium, :szoba, :beosztas_datuma, 
+							'0000-00-00 00:00:00', '0000-00-00 00:00:00')";
 
 	$sth = $dbh->prepare($sql);
 
@@ -1558,7 +1561,7 @@ function updateUserLastLogin($dbh, $userID){
                         WHERE felhasznalo_id = :userID";
 
 	$sth = $dbh->prepare($sql);
-	$sth->bindParam(':lastLogin', $lastLogin);
+	$sth->bindParam(':lastLogin', date('Y-m-d H:i:s'));
 	$sth->bindParam(':userID', $userID);
 
 	$sth->execute();
