@@ -952,7 +952,7 @@ function getStudentBeKikoltoztetLista($dbh, $name, $kollID){
            and ksr.tanev_id = ksr2.tanev_id
              and ksr2.reszletek_id > ksr.reszletek_id
        )
-    join kolibri_szoba_definiciok ksd on ksr.szoba_id = ksd.szoba_def_id
+    left join kolibri_szoba_definiciok ksd on ksr.szoba_id = ksd.szoba_def_id
  WHERE kh.hallgato_neve like :nev
  AND kf.kollegium_id = :kollid
  LIMIT 10';
